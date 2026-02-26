@@ -9,6 +9,10 @@
   "extensionDependencies": ["ms-mssql.mssql"],
   "activationEvents": ["onView:objectExplorer"],
   "main": "./out/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jdanton/query-store-reports.git"
+  },
   "contributes": {
     "commands": [
       { "command": "queryStore.topResources",       "title": "Top Resource Consuming Queries", "category": "Query Store" },
