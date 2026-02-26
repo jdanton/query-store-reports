@@ -10,24 +10,31 @@ declare function acquireVsCodeApi(): {
 
 const vscode = acquireVsCodeApi();
 
+// ---- DOM helpers ----
+function getEl<T extends HTMLElement = HTMLElement>(id: string): T {
+  const el = document.getElementById(id);
+  if (!el) { throw new Error(`Missing element: #${id}`); }
+  return el as T;
+}
+
 // ---- DOM refs ----
-const app         = document.getElementById('app')!;
-const toolbar     = document.getElementById('toolbar')!;
-const statusBar   = document.getElementById('status-bar')!;
-const mainContent = document.getElementById('main-content')!;
-const chartSection = document.getElementById('chart-section')!;
-const gridContainer = document.getElementById('grid-container')!;
-const drilldownSection = document.getElementById('drilldown-section')!;
-const drilldownTitle   = document.getElementById('drilldown-title')!;
-const drilldownClose   = document.getElementById('drilldown-close')!;
-const planContainer    = document.getElementById('plan-container')!;
-const planCanvas       = document.getElementById('plan-canvas')!;
-const planTooltip      = document.getElementById('plan-tooltip')!;
-const forcePlanBtn     = document.getElementById('force-plan-btn') as HTMLButtonElement;
-const unforcePlanBtn   = document.getElementById('unforce-plan-btn') as HTMLButtonElement;
-const planZoomFit  = document.getElementById('plan-zoom-fit')!;
-const planZoomIn   = document.getElementById('plan-zoom-in')!;
-const planZoomOut  = document.getElementById('plan-zoom-out')!;
+const app         = getEl('app');
+const toolbar     = getEl('toolbar');
+const statusBar   = getEl('status-bar');
+const mainContent = getEl('main-content');
+const chartSection = getEl('chart-section');
+const gridContainer = getEl('grid-container');
+const drilldownSection = getEl('drilldown-section');
+const drilldownTitle   = getEl('drilldown-title');
+const drilldownClose   = getEl('drilldown-close');
+const planContainer    = getEl('plan-container');
+const planCanvas       = getEl('plan-canvas');
+const planTooltip      = getEl('plan-tooltip');
+const forcePlanBtn     = getEl<HTMLButtonElement>('force-plan-btn');
+const unforcePlanBtn   = getEl<HTMLButtonElement>('unforce-plan-btn');
+const planZoomFit  = getEl('plan-zoom-fit');
+const planZoomIn   = getEl('plan-zoom-in');
+const planZoomOut  = getEl('plan-zoom-out');
 
 // ---- State ----
 const reportType = app.dataset.reportType!;
@@ -660,7 +667,7 @@ function renderGrid(rows: Record<string, unknown>[]): void {
       btn.textContent = 'Remove Forced Plan';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        vscode.postMessage({ type: 'removeForcedPlan', queryId: row.query_id });
+        vscode.postMessage({ type: 'removeForcedPlan', queryId: row.query_id, planId: row.plan_id });
       });
       td.appendChild(btn);
       tr.appendChild(td);
@@ -712,7 +719,7 @@ forcePlanBtn.addEventListener('click', () => {
 
 unforcePlanBtn.addEventListener('click', () => {
   if (currentDrilldownQueryId !== null) {
-    vscode.postMessage({ type: 'removeForcedPlan', queryId: currentDrilldownQueryId });
+    vscode.postMessage({ type: 'removeForcedPlan', queryId: currentDrilldownQueryId, planId: currentDrilldownPlanId });
   }
 });
 

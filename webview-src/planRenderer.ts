@@ -48,26 +48,8 @@ export function parsePlan(xml: string): PlanNode | null {
 
 function parseRelOp(el: Element, rootCost: number): PlanNode {
   const totalCost = parseFloat(el.getAttribute('TotalSubtreeCost') ?? '0');
-  const children: PlanNode[] = [];
 
-  for (const child of el.children) {
-    // Find nested RelOp elements (skip non-RelOp wrapper elements)
-    const nested = child.querySelectorAll(':scope > RelOp');
-    for (const n of nested) {
-      children.push(parseRelOp(n, rootCost));
-    }
-    // Also handle RelOp inside Parallelism, Concat, etc.
-    if (child.tagName !== 'RelOp') {
-      for (const relOp of child.querySelectorAll('RelOp')) {
-        // Only direct RelOp children that aren't already caught
-        if (relOp.parentElement === child) {
-          children.push(parseRelOp(relOp, rootCost));
-        }
-      }
-    }
-  }
-
-  // De-duplicate children by reference
+  // Single pass: collect all direct-grandchild RelOp elements, de-duplicated
   const seen = new Set<Element>();
   const uniqueChildren: PlanNode[] = [];
   const allRelOps = el.querySelectorAll(':scope > * > RelOp');
@@ -91,7 +73,7 @@ function parseRelOp(el: Element, rootCost: number): PlanNode {
     relOpCost:        rootCost > 0 ? totalCost / rootCost : 0,
     parallelism:      el.getAttribute('Parallel') === '1',
     nodeId:           parseInt(el.getAttribute('NodeId') ?? '0', 10),
-    children:         uniqueChildren.length > 0 ? uniqueChildren : children,
+    children:         uniqueChildren,
     x: 0, y: 0, width: NODE_W, height: NODE_H,
   };
   return node;
