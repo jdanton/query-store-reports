@@ -158,6 +158,7 @@ export class QueryStorePanel {
             intervalEndTime:   dt('intervalEndTime',   new Date()),
             replicaGroupId:    Number(p.replicaGroupId ?? 1),
             metric:            ((p.metric as string) ?? 'duration') as TopResourceConsumingParams['metric'],
+            minPlans:          Number(p.minPlans ?? 1),
           });
           break;
         }

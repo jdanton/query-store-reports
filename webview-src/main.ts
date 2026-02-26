@@ -165,10 +165,12 @@ function buildToolbar(): void {
       { value: 'memory',        label: 'Memory (KB)' },
       { value: 'rowcount',      label: 'Row Count' },
     ], 'duration');
+    const minPlansInput = makeInput('number', '1', { min: '1', max: '100', style: 'width:60px' });
 
     toolbar.appendChild(makeGroup(...timeEls));
     toolbar.appendChild(makeGroup(makeLabel('Metric:'), metricSelect));
     toolbar.appendChild(makeGroup(makeLabel('Top:'), rowCountInput));
+    toolbar.appendChild(makeGroup(makeLabel('Min Plans:'), minPlansInput));
     toolbar.appendChild(refresh);
 
     refresh.addEventListener('click', () => {
@@ -177,6 +179,7 @@ function buildToolbar(): void {
         intervalEndTime: getEnd(),
         resultsRowCount: parseInt(rowCountInput.value, 10) || 25,
         metric: metricSelect.value,
+        minPlans: parseInt(minPlansInput.value, 10) || 1,
         replicaGroupId: 1,
       };
       requestData();
@@ -186,6 +189,7 @@ function buildToolbar(): void {
       intervalEndTime: defaultNow,
       resultsRowCount: 25,
       metric: 'duration',
+      minPlans: 1,
       replicaGroupId: 1,
     };
 

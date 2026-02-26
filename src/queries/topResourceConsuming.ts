@@ -25,6 +25,7 @@ export interface TopResourceConsumingParams {
   intervalEndTime: Date;
   replicaGroupId: number;
   metric: TopResourceMetric;
+  minPlans: number;
 }
 
 export interface TopResourceConsumingRow {
@@ -57,6 +58,7 @@ export async function executeTopResourceConsuming(
   request.input('interval_start_time', sql.DateTimeOffset, params.intervalStartTime);
   request.input('interval_end_time', sql.DateTimeOffset, params.intervalEndTime);
   request.input('replica_group_id', sql.BigInt, params.replicaGroupId);
+  request.input('min_plans', sql.Int, params.minPlans);
 
   const metricExpr = METRIC_EXPR[params.metric];
   const querySql = `
@@ -77,7 +79,7 @@ WHERE
     NOT (rs.first_execution_time > @interval_end_time OR rs.last_execution_time < @interval_start_time)
     AND rs.replica_group_id = @replica_group_id
 GROUP BY p.query_id, qt.query_sql_text, q.object_id
-HAVING COUNT(distinct p.plan_id) >= 1
+HAVING COUNT(distinct p.plan_id) >= @min_plans
 ORDER BY metric_value DESC`;
 
   const result = await request.query<TopResourceConsumingRow>(querySql);
