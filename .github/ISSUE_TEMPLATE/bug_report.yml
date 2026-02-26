@@ -1,0 +1,133 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in Query Store Reports
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below to help us investigate and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what went wrong...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Execute '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what you expected to happen...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem.
+      placeholder: Paste or drag screenshots here...
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: vscode-version
+    attributes:
+      label: VS Code Version
+      description: What version of VS Code are you using?
+      placeholder: e.g., 1.85.0
+    validations:
+      required: true
+
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension Version
+      description: What version of Query Store Reports are you using?
+      placeholder: e.g., 0.4.0
+    validations:
+      required: true
+
+  - type: input
+    id: sql-server-version
+    attributes:
+      label: SQL Server Version
+      description: What version of SQL Server are you connecting to?
+      placeholder: e.g., SQL Server 2019, Azure SQL Database
+    validations:
+      required: true
+
+  - type: dropdown
+    id: authentication-type
+    attributes:
+      label: Authentication Type
+      description: What authentication method are you using?
+      options:
+        - SQL Login
+        - Windows / Integrated
+        - Azure AD / Entra ID (MFA)
+        - Other
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here, such as error messages from the VS Code Developer Console (Help > Toggle Developer Tools).
+      placeholder: Any additional information that might help us resolve this issue...
+
+  - type: checkboxes
+    id: query-store-enabled
+    attributes:
+      label: Query Store Status
+      description: Please confirm the following
+      options:
+        - label: I have confirmed that Query Store is enabled on my database
+        - label: I have checked the VS Code Developer Console (Help > Toggle Developer Tools) for error messages
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: If there are any error messages in the VS Code Developer Console or Output panel, please paste them here.
+      placeholder: Paste error logs here...
+      render: shell
