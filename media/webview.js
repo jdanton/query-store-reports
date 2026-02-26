@@ -205,6 +205,7 @@
   var currentPlanRoot = null;
   var currentDrilldownQueryId = null;
   var currentDrilldownPlanId = null;
+  var availablePlanIds = [];
   function fmtDateTimeLocal(iso) {
     const d = new Date(iso);
     const pad = (n) => String(n).padStart(2, "0");
@@ -827,6 +828,7 @@
     }
     const canvas = document.getElementById("drilldown-chart");
     const planIds = [...new Set(rows.map((r) => r.plan_id))];
+    availablePlanIds = planIds;
     const datasets = planIds.map((pid, idx) => {
       const planRows = rows.filter((r) => r.plan_id === pid).sort(
         (a, b) => new Date(a.bucket_start).getTime() - new Date(b.bucket_start).getTime()
@@ -852,13 +854,56 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: "var(--vscode-foreground)", font: { size: 11 } } } },
+        plugins: {
+          legend: {
+            labels: {
+              color: "var(--vscode-foreground)",
+              font: { size: 11 }
+            },
+            onClick: (_evt, legendItem) => {
+              const match = String(legendItem.text ?? "").match(/Plan\s+(\d+)/);
+              if (match) {
+                const pid = parseInt(match[1], 10);
+                requestPlan(pid);
+              }
+            },
+            onHover: (_evt, _legendItem, _legend) => {
+              canvas.style.cursor = "pointer";
+            },
+            onLeave: (_evt, _legendItem, _legend) => {
+              canvas.style.cursor = "";
+            }
+          }
+        },
         scales: {
           x: { ticks: { color: "var(--vscode-foreground)", font: { size: 10 } }, grid: { color: "var(--vscode-editorWidget-border)" } },
           y: { beginAtZero: true, title: { display: true, text: "Avg Duration (ms)", color: "var(--vscode-foreground)" }, ticks: { color: "var(--vscode-foreground)" }, grid: { color: "var(--vscode-editorWidget-border)" } }
         }
       }
     });
+    updateLegendActiveState();
+  }
+  function requestPlan(planId) {
+    if (!currentDrilldownQueryId)
+      return;
+    currentDrilldownPlanId = planId;
+    planCanvas.innerHTML = '<div class="qs-plan-loading">Loading plan\u2026</div>';
+    forcePlanBtn.style.display = "none";
+    unforcePlanBtn.style.display = "none";
+    vscode.postMessage({ type: "getPlan", queryId: currentDrilldownQueryId, planId });
+    updateLegendActiveState();
+  }
+  function updateLegendActiveState() {
+    if (!drilldownChart)
+      return;
+    const datasets = drilldownChart.data.datasets;
+    for (let i = 0; i < datasets.length; i++) {
+      const pid = availablePlanIds[i];
+      const isActive = pid === currentDrilldownPlanId;
+      datasets[i].borderWidth = isActive ? 4 : 2;
+      datasets[i].pointRadius = isActive ? 5 : 3;
+    }
+    drilldownChart.update();
   }
   function renderPlan(xml, isForcedPlan) {
     const root = parsePlan(xml);
@@ -927,6 +972,10 @@
       }
       case "planData": {
         const xml = msg.xml;
+        if (msg.planId) {
+          currentDrilldownPlanId = msg.planId;
+          updateLegendActiveState();
+        }
         if (xml) {
           renderPlan(xml, Boolean(msg.isForcedPlan));
         } else {

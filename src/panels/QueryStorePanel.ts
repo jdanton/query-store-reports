@@ -114,6 +114,12 @@ export class QueryStorePanel {
         await this._loadDrilldown(queryId, planId, msg.params as Record<string, unknown>);
         break;
       }
+      case 'getPlan': {
+        const queryId = msg.queryId as number;
+        const planId  = msg.planId  as number;
+        await this._loadPlan(queryId, planId);
+        break;
+      }
       case 'forcePlan': {
         const queryId = msg.queryId as number;
         const planId  = msg.planId  as number;
@@ -242,15 +248,25 @@ export class QueryStorePanel {
 
       // Query plan
       if (effectivePlanId) {
-        const planParams: QueryPlanParams = { queryId, planId: effectivePlanId };
-        const planRows = await executeQueryPlan(pool, planParams);
-        if (planRows.length > 0 && planRows[0].query_plan) {
-          this._post({ type: 'planData', xml: planRows[0].query_plan, isForcedPlan: planRows[0].is_forced_plan });
-        } else {
-          this._post({ type: 'planData', xml: '', isForcedPlan: false });
-        }
+        await this._loadPlan(queryId, effectivePlanId);
       } else {
-        this._post({ type: 'planData', xml: '', isForcedPlan: false });
+        this._post({ type: 'planData', xml: '', isForcedPlan: false, planId: 0 });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this._post({ type: 'error', message });
+    }
+  }
+
+  private async _loadPlan(queryId: number, planId: number): Promise<void> {
+    try {
+      const pool = await this.runner.getPool();
+      const planParams: QueryPlanParams = { queryId, planId };
+      const planRows = await executeQueryPlan(pool, planParams);
+      if (planRows.length > 0 && planRows[0].query_plan) {
+        this._post({ type: 'planData', xml: planRows[0].query_plan, isForcedPlan: planRows[0].is_forced_plan, planId });
+      } else {
+        this._post({ type: 'planData', xml: '', isForcedPlan: false, planId });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

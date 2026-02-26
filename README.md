@@ -20,6 +20,7 @@ A cross-platform VS Code extension that brings SQL Server Management Studio's **
 Every query-level report supports **drill-down**: click any row to open a split panel showing:
 - Per-plan **execution statistics** over time (line chart bucketed by minute)
 - The **query execution plan** rendered as an interactive SVG diagram
+- When a query has **multiple plans**, click any plan label in the chart legend to switch between them
 
 ---
 

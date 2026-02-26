@@ -76896,6 +76896,12 @@ var QueryStorePanel = class _QueryStorePanel {
         await this._loadDrilldown(queryId, planId, msg.params);
         break;
       }
+      case "getPlan": {
+        const queryId = msg.queryId;
+        const planId = msg.planId;
+        await this._loadPlan(queryId, planId);
+        break;
+      }
       case "forcePlan": {
         const queryId = msg.queryId;
         const planId = msg.planId;
@@ -77008,15 +77014,24 @@ var QueryStorePanel = class _QueryStorePanel {
         effectivePlanId = latestRow.plan_id;
       }
       if (effectivePlanId) {
-        const planParams = { queryId, planId: effectivePlanId };
-        const planRows = await executeQueryPlan(pool, planParams);
-        if (planRows.length > 0 && planRows[0].query_plan) {
-          this._post({ type: "planData", xml: planRows[0].query_plan, isForcedPlan: planRows[0].is_forced_plan });
-        } else {
-          this._post({ type: "planData", xml: "", isForcedPlan: false });
-        }
+        await this._loadPlan(queryId, effectivePlanId);
       } else {
-        this._post({ type: "planData", xml: "", isForcedPlan: false });
+        this._post({ type: "planData", xml: "", isForcedPlan: false, planId: 0 });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this._post({ type: "error", message });
+    }
+  }
+  async _loadPlan(queryId, planId) {
+    try {
+      const pool = await this.runner.getPool();
+      const planParams = { queryId, planId };
+      const planRows = await executeQueryPlan(pool, planParams);
+      if (planRows.length > 0 && planRows[0].query_plan) {
+        this._post({ type: "planData", xml: planRows[0].query_plan, isForcedPlan: planRows[0].is_forced_plan, planId });
+      } else {
+        this._post({ type: "planData", xml: "", isForcedPlan: false, planId });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

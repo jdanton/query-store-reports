@@ -4,6 +4,20 @@ All notable changes to **SQL Server Query Store Reports** are documented here.
 
 ---
 
+## [0.3.0] — 2026-02-26
+
+### Added
+
+- **Clickable plan legend** — in the drill-down execution stats chart, click any plan label in the legend (e.g., "Plan 54") to load that plan's execution plan in the viewer below. Pointer cursor on hover indicates clickability.
+- **Active plan highlighting** — the currently displayed plan is emphasized in the chart with a thicker line (4px) and larger data points (5px).
+- **Plan switching** — new `getPlan` message type allows loading any plan without re-running the full drilldown. Switching plans is instant once execution stats are loaded.
+
+### Fixed
+
+- **Drill-down plan_id resolution** — reports that aggregate across plans (Top Resource Consuming, High Variation, Regressed) no longer default to `plan_id = 1`. The extension now picks the most recent plan from execution stats, so the plan viewer loads the correct plan.
+
+---
+
 ## [0.2.0] — 2026-02-26
 
 ### Fixed
