@@ -4,6 +4,30 @@ All notable changes to **SQL Server Query Store Reports** are documented here.
 
 ---
 
+## [0.4.0] — 2026-02-26
+
+### Added
+
+- **Min Plans filter** — Top Resource Consuming Queries toolbar now includes a "Min Plans" parameter that filters out queries with fewer than N distinct execution plans (default: 1).
+- **Enhanced plan viewer** — merged improvements from Azure Data Studio's execution plan renderer:
+  - **Variable edge thickness** — edge lines scale with row count using a logarithmic formula, making high-row-count data flows visually prominent.
+  - **Arrowhead markers** — edges now have arrowheads indicating data flow direction.
+  - **Row count labels** — estimated row counts are displayed at the midpoint of each edge.
+  - **Object names** — nodes display the referenced table/index name (e.g., `dbo.Users.PK_Users`) when available.
+  - **Warning badges** — a ⚠ badge appears on nodes with warnings (SpillToTempDb, NoJoinPredicate, missing statistics, unmatched indexes).
+  - **Parallelism indicators** — a ‖ badge marks parallel operators.
+  - **Structured HTML tooltips** — tooltips now show a formatted card with operator name, metrics table, object name, and warnings instead of plain text.
+  - **Edge tooltips** — hover over an edge to see estimated rows, row size, and data size.
+- **Unit test suite** — 76 tests across 9 test files using vitest + happy-dom:
+  - `tests/planRenderer.test.ts` — 42 tests covering XML parsing, SVG rendering, color mapping, edge weight calculation, and formatting helpers.
+  - `tests/queries/*.test.ts` — 34 tests covering all 8 query modules (parameter binding, SQL structure, recordset passthrough).
+
+### Changed
+
+- **Metric validation** — `topResourceConsuming.ts` now validates the metric parameter and throws on invalid values.
+
+---
+
 ## [0.3.0] — 2026-02-26
 
 ### Added

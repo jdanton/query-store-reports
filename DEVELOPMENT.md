@@ -24,6 +24,8 @@ npm install
 | `npm run compile` | `out/extension.js` + `media/webview.js` with source maps | Development |
 | `npm run build` | Same files, minified, no source maps | Packaging |
 | `node esbuild.mjs --watch` | Incremental builds on file change | Active development |
+| `npm test` | Runs all vitest tests once | CI / pre-commit |
+| `npm run test:watch` | Runs vitest in watch mode | Active development |
 
 Two independent bundles are produced by [esbuild.mjs](esbuild.mjs):
 
@@ -73,6 +75,23 @@ query-store-reports/
 ├── out/
 │   └── extension.js            Compiled extension bundle
 │
+├── tests/                      Unit tests (vitest)
+│   ├── helpers/
+│   │   ├── mockSql.ts          createMockPool() — mock mssql.ConnectionPool factory
+│   │   └── samplePlans.ts      XML showplan fixtures for plan renderer tests
+│   ├── planRenderer.test.ts    Plan parsing, SVG rendering, helper functions (42 tests)
+│   └── queries/                One test file per query module (34 tests total)
+│       ├── topResourceConsuming.test.ts
+│       ├── regressedQueries.test.ts
+│       ├── highVariation.test.ts
+│       ├── waitStats.test.ts
+│       ├── forcedPlans.test.ts
+│       ├── overallConsumption.test.ts
+│       ├── executionStats.test.ts
+│       └── queryPlan.test.ts
+│
+├── vitest.config.ts            Test configuration
+├── tsconfig.test.json          Test TypeScript config (extends tsconfig.json)
 ├── esbuild.mjs                 Unified build script
 ├── tsconfig.json               Compiles src/ only (webview-src is compiled by esbuild)
 └── package.json                Extension manifest
@@ -228,6 +247,38 @@ In `webview-src/main.ts`, add a branch in `renderChart()` that calls your new re
 
 ---
 
+## Testing
+
+The test suite uses [vitest](https://vitest.dev/) with [happy-dom](https://github.com/nicedoc/happy-dom) for browser API support (DOMParser).
+
+### Running tests
+
+```bash
+npm test            # single run
+npm run test:watch  # watch mode
+```
+
+### Test structure
+
+- **`tests/planRenderer.test.ts`** (42 tests) — tests XML showplan parsing (`parsePlan`), SVG rendering (`renderPlanSvg`), and exported helper functions (`costColor`, `edgeWeight`, `formatRows`, `formatCost`). Uses the `// @vitest-environment happy-dom` directive for DOMParser support.
+
+- **`tests/queries/*.test.ts`** (34 tests) — one file per query module. Each test uses `createMockPool()` to verify parameter binding (names, types, values), SQL structure (key clauses), and recordset passthrough.
+
+### Mock helpers
+
+**`tests/helpers/mockSql.ts`** — `createMockPool(recordset?)` returns a mock `sql.ConnectionPool` that tracks all `.input()` calls and captures the SQL string:
+
+```typescript
+const { pool, state } = createMockPool([{ id: 1 }]);
+await executeMyQuery(pool, params);
+expect(state.inputs).toContainEqual({ name: 'my_param', type: sql.BigInt, value: 42 });
+expect(state.querySql).toContain('expected SQL fragment');
+```
+
+**`tests/helpers/samplePlans.ts`** — XML showplan fixtures: `SIMPLE_SCAN_PLAN`, `NESTED_LOOP_PLAN`, `WARNINGS_PLAN`, `PARALLEL_PLAN`, `INVALID_XML`, `NO_RELOP_XML`.
+
+---
+
 ## Plan Renderer
 
 `webview-src/planRenderer.ts` is a self-contained module with no runtime dependencies (it uses the browser's native `DOMParser`).
@@ -235,8 +286,10 @@ In `webview-src/main.ts`, add a branch in `renderChart()` that calls your new re
 **Parsing:**
 1. `parsePlan(xml)` finds the root `RelOp` element under `StmtSimple > QueryPlan > RelOp`.
 2. `parseRelOp()` recursively walks nested `RelOp` elements, building a `PlanNode` tree.
-3. Each node captures: `PhysicalOp`, `LogicalOp`, `EstimateRows`, `EstimateCPU`, `EstimateIO`, `TotalSubtreeCost`, and `Parallel`.
+3. Each node captures: `PhysicalOp`, `LogicalOp`, `EstimateRows`, `EstimateCPU`, `EstimateIO`, `TotalSubtreeCost`, `Parallel`, `objectName`, `warnings`, and `estimateExecutions`.
 4. `relOpCost` is computed as `node.totalSubtreeCost / rootTotalSubtreeCost`, giving a 0–1 fraction used for color mapping.
+5. `extractObjectName(relOp)` parses `<Object>` elements to produce `Schema.Table.Index` strings.
+6. `extractWarnings(relOp)` collects SpillToTempDb, NoJoinPredicate, ColumnsWithNoStatistics, and UnmatchedIndexes.
 
 **Layout:**
 1. `computeLayout()` recursively assigns `width` and `height` to each node using a bottom-up bounding-box algorithm.
@@ -245,7 +298,10 @@ In `webview-src/main.ts`, add a branch in `renderChart()` that calls your new re
 **Rendering:**
 1. `renderPlanSvg()` walks the tree and emits SVG `<rect>`, `<text>`, and `<path>` elements.
 2. `costColor(fraction)` maps 0–1 to `hsl(120,70%,45%)` (green) → `hsl(0,70%,45%)` (red).
-3. Tooltip text is stored in `data-tooltip` attributes; `main.ts` attaches `mouseenter`/`mousemove`/`mouseleave` listeners to display a floating overlay.
+3. `edgeWeight(rowCount)` computes edge stroke width using a log10 formula (adapted from Azure Data Studio): `Math.max(0.5, Math.min(0.5 + 0.75 * Math.log10(rowCount), 6))`.
+4. Edges include arrowhead markers and row count labels at their midpoints.
+5. Nodes display warning badges (⚠) and parallelism indicators (‖) when applicable.
+6. Tooltip HTML is stored in `data-tooltip` attributes; `main.ts` attaches `mouseenter`/`mousemove`/`mouseleave` listeners to display a floating overlay. Tooltips use structured HTML with operator name, metrics table, object name, and warnings.
 
 ---
 

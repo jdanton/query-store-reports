@@ -825,12 +825,12 @@ function renderPlan(xml: string, isForcedPlan: boolean): void {
   planCanvas.innerHTML = svgHtml;
   planScale = 1;
 
-  // Attach tooltip listeners
-  planCanvas.querySelectorAll('.plan-node').forEach(node => {
+  // Attach tooltip listeners to both nodes and edges
+  planCanvas.querySelectorAll('.plan-node, .plan-edge').forEach(node => {
     node.addEventListener('mouseenter', (e) => {
       const target = e.currentTarget as HTMLElement;
       const info = target.dataset.tooltip ?? '';
-      planTooltip.textContent = info;
+      planTooltip.innerHTML = info;
       planTooltip.classList.remove('hidden');
     });
     node.addEventListener('mouseleave', () => {

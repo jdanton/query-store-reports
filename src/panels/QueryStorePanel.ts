@@ -241,9 +241,9 @@ export class QueryStorePanel {
       // otherwise pick the most recent plan from the execution stats results.
       let effectivePlanId = planId;
       if ((!effectivePlanId || effectivePlanId <= 0) && statsRows.length > 0) {
-        const latestRow = statsRows.reduce((a: Record<string, unknown>, b: Record<string, unknown>) => {
-          const ta = new Date(a.bucket_start as string).getTime();
-          const tb = new Date(b.bucket_start as string).getTime();
+        const latestRow = statsRows.reduce((a, b) => {
+          const ta = new Date(a.bucket_start).getTime();
+          const tb = new Date(b.bucket_start).getTime();
           return tb > ta ? b : a;
         });
         effectivePlanId = latestRow.plan_id as number;

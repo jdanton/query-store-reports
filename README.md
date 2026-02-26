@@ -48,7 +48,7 @@ Every query-level report supports **drill-down**: click any row to open a split 
    npm run build
    npx vsce package
    ```
-   This produces a file like `query-store-reports-0.3.0.vsix`.
+   This produces a file like `query-store-reports-0.4.0.vsix`.
 
 2. In VS Code: **Extensions** → `···` menu → **Install from VSIX…**
 3. Select the `.vsix` file.
@@ -113,7 +113,12 @@ Each report's toolbar exposes the parameters that drive its query.
 | History Period | The baseline window to compare against (default: last 7 days) |
 | Min Executions | Only include queries with at least this many executions in the recent window (filters noise) |
 
-### Top Resource Consuming — metric selector
+### Top Resource Consuming — parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| Metric | Ranking metric — Duration, CPU Time, Logical/Physical IO Reads/Writes, Memory, or Row Count |
+| Min Plans | Only include queries with at least this many distinct execution plans (default: 1) |
 
 | Metric | Column |
 |--------|--------|
@@ -132,7 +137,14 @@ Each report's toolbar exposes the parameters that drive its query.
 Click any row in a report grid to open the drill-down panel. The lower section renders the XML execution plan as an SVG node graph:
 
 - **Node color** encodes relative cost: green (cheap) → red (expensive).
-- **Hover over a node** to see a tooltip with physical op, logical op, estimated rows, CPU cost, I/O cost, subtree cost, and parallelism flag.
+- **Variable edge thickness** — edge lines scale logarithmically with estimated row count, making heavy data flows easy to spot.
+- **Arrowheads** on edges indicating data flow direction.
+- **Row count labels** at the midpoint of each edge.
+- **Object names** displayed on nodes (e.g., `dbo.Users.PK_Users`) when the operator references a table or index.
+- **Warning badges** (⚠) on nodes with SpillToTempDb, NoJoinPredicate, missing statistics, or unmatched indexes.
+- **Parallelism indicators** (‖) on parallel operators.
+- **Structured tooltips** — hover over a node to see a formatted card with operator name, cost metrics (CPU, I/O, subtree cost, estimated rows), object name, and warnings.
+- **Edge tooltips** — hover over an edge to see estimated rows, row size, and data size.
 - **Zoom controls** (Fit / + / −) in the plan toolbar.
 - **Force This Plan** button stores the displayed plan as the forced plan for the query (`sp_query_store_force_plan`).
 - **Remove Forced Plan** reverts to automatic plan selection (`sp_query_store_unforce_plan`).
