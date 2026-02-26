@@ -1,0 +1,6 @@
+node_modules/
+out/
+media/webview.js
+media/webview.js.map
+*.vsix
+.claude/
