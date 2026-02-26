@@ -228,11 +228,27 @@ export class QueryStorePanel {
       const statsRows = await executeExecutionStats(pool, statsParams);
       this._post({ type: 'drilldownData', rows: statsRows });
 
+      // Determine the best plan_id: use the one from the report row if valid,
+      // otherwise pick the most recent plan from the execution stats results.
+      let effectivePlanId = planId;
+      if ((!effectivePlanId || effectivePlanId <= 0) && statsRows.length > 0) {
+        const latestRow = statsRows.reduce((a: Record<string, unknown>, b: Record<string, unknown>) => {
+          const ta = new Date(a.bucket_start as string).getTime();
+          const tb = new Date(b.bucket_start as string).getTime();
+          return tb > ta ? b : a;
+        });
+        effectivePlanId = latestRow.plan_id as number;
+      }
+
       // Query plan
-      const planParams: QueryPlanParams = { queryId, planId };
-      const planRows = await executeQueryPlan(pool, planParams);
-      if (planRows.length > 0 && planRows[0].query_plan) {
-        this._post({ type: 'planData', xml: planRows[0].query_plan, isForcedPlan: planRows[0].is_forced_plan });
+      if (effectivePlanId) {
+        const planParams: QueryPlanParams = { queryId, planId: effectivePlanId };
+        const planRows = await executeQueryPlan(pool, planParams);
+        if (planRows.length > 0 && planRows[0].query_plan) {
+          this._post({ type: 'planData', xml: planRows[0].query_plan, isForcedPlan: planRows[0].is_forced_plan });
+        } else {
+          this._post({ type: 'planData', xml: '', isForcedPlan: false });
+        }
       } else {
         this._post({ type: 'planData', xml: '', isForcedPlan: false });
       }

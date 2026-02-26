@@ -673,7 +673,7 @@ function renderGrid(rows: Record<string, unknown>[]): void {
 
 function openDrilldown(row: Record<string, unknown>): void {
   const queryId = row.query_id as number;
-  const planId  = row.plan_id  as number ?? 1;
+  const planId  = row.plan_id  as number ?? 0;
   if (!queryId) return;
 
   currentDrilldownQueryId = queryId;
