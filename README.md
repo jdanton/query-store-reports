@@ -39,16 +39,26 @@ Every query-level report supports **drill-down**: click any row to open a split 
 ## Installation
 
 ### From VSIX (recommended)
-1. Build the `.vsix` package (see [Development](#development)) or download a release.
+
+1. Build the `.vsix` package:
+   ```bash
+   git clone https://github.com/jdanton/query-store-reports.git
+   cd query-store-reports
+   npm install
+   npm run build
+   npx vsce package
+   ```
+   This produces a file like `query-store-reports-0.3.0.vsix`.
+
 2. In VS Code: **Extensions** → `···` menu → **Install from VSIX…**
 3. Select the `.vsix` file.
 
-### From source
+### From source (development)
 ```bash
-git clone <repo-url>
+git clone https://github.com/jdanton/query-store-reports.git
 cd query-store-reports
 npm install
-npm run build
+npm run compile
 ```
 Then press **F5** in VS Code to launch an Extension Development Host.
 
