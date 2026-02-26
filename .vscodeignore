@@ -1,0 +1,9 @@
+src/**
+webview-src/**
+node_modules/**
+.eslintrc.json
+tsconfig.json
+esbuild.mjs
+queries.sql
+catalogviews.sql
+**/*.map

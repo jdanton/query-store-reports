@@ -1,0 +1,64 @@
+{
+  "name": "query-store-reports",
+  "displayName": "SQL Server Query Store Reports",
+  "description": "Cross-platform Query Store reports for SQL Server, integrated with the mssql extension",
+  "version": "0.1.0",
+  "publisher": "query-store-reports",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "extensionDependencies": ["ms-mssql.mssql"],
+  "activationEvents": ["onView:objectExplorer"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "queryStore.topResources",       "title": "Top Resource Consuming Queries", "category": "Query Store" },
+      { "command": "queryStore.regressed",          "title": "Regressed Queries",              "category": "Query Store" },
+      { "command": "queryStore.highVariation",      "title": "Queries with High Variation",    "category": "Query Store" },
+      { "command": "queryStore.waitStats",          "title": "Overall Wait Statistics",        "category": "Query Store" },
+      { "command": "queryStore.forcedPlans",        "title": "Forced Plans",                   "category": "Query Store" },
+      { "command": "queryStore.overallConsumption", "title": "Overall Resource Consumption",   "category": "Query Store" }
+    ],
+    "submenus": [
+      { "id": "queryStore.submenu", "label": "Query Store" }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "queryStore.topResources" },
+        { "command": "queryStore.regressed" },
+        { "command": "queryStore.highVariation" },
+        { "command": "queryStore.waitStats" },
+        { "command": "queryStore.forcedPlans" },
+        { "command": "queryStore.overallConsumption" }
+      ],
+      "view/item/context": [
+        {
+          "submenu": "queryStore.submenu",
+          "when": "view == objectExplorer && viewItem == database",
+          "group": "queryStore@1"
+        }
+      ],
+      "queryStore.submenu": [
+        { "command": "queryStore.topResources",       "group": "1_reports@1" },
+        { "command": "queryStore.regressed",          "group": "1_reports@2" },
+        { "command": "queryStore.highVariation",      "group": "1_reports@3" },
+        { "command": "queryStore.waitStats",          "group": "1_reports@4" },
+        { "command": "queryStore.forcedPlans",        "group": "1_reports@5" },
+        { "command": "queryStore.overallConsumption", "group": "1_reports@6" }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "build": "node esbuild.mjs --production"
+  },
+  "dependencies": {
+    "mssql": "^11.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/mssql": "^9.1.5",
+    "typescript": "^5.3.3",
+    "esbuild": "^0.20.1"
+  }
+}

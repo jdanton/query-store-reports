@@ -1,0 +1,357 @@
+/* ============================================================
+   Query Store Reports — VS Code Webview Styles
+   Uses VS Code CSS custom properties for theme awareness
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- Header ---- */
+.qs-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: var(--vscode-titleBar-activeBackground, var(--vscode-sideBar-background));
+  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-editorWidget-border));
+  flex-shrink: 0;
+}
+
+.qs-header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qs-report-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-titleBar-activeForeground, var(--vscode-foreground));
+}
+
+.qs-connection-label {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* ---- Toolbar ---- */
+.qs-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-editorWidget-border));
+  flex-shrink: 0;
+}
+
+.qs-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qs-label {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.qs-input {
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  padding: 3px 6px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  min-width: 120px;
+}
+.qs-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.qs-select {
+  background-color: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border));
+  padding: 3px 6px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+.qs-select:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+/* ---- Buttons ---- */
+.qs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  white-space: nowrap;
+}
+.qs-btn:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+.qs-btn-primary {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+.qs-btn-primary:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+.qs-btn-danger {
+  background-color: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+  color: var(--vscode-inputValidation-errorForeground, #f44);
+  border-color: var(--vscode-inputValidation-errorBorder, #be1100);
+}
+.qs-btn-danger:hover {
+  opacity: 0.85;
+}
+.qs-btn-sm {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+.qs-btn-icon {
+  background: none;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+.qs-btn-icon:hover {
+  background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+/* ---- Status bar ---- */
+.qs-status {
+  padding: 4px 16px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.qs-status.loading {
+  color: var(--vscode-progressBar-background, #0e70c0);
+  background-color: var(--vscode-editor-background);
+}
+.qs-status.error {
+  color: var(--vscode-errorForeground, #f44);
+  background-color: var(--vscode-inputValidation-errorBackground, #5a1d1d33);
+}
+.hidden {
+  display: none !important;
+}
+
+/* ---- Main layout ---- */
+.qs-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- Chart section ---- */
+.qs-chart-section {
+  flex: 0 0 280px;
+  padding: 12px 16px 4px;
+  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-editorWidget-border));
+  position: relative;
+}
+.qs-chart-section canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 256px;
+}
+
+/* ---- Grid section ---- */
+.qs-grid-section {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+}
+
+.qs-grid-container {
+  overflow: auto;
+  height: 100%;
+}
+
+.qs-empty {
+  padding: 24px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+
+.qs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.qs-table th {
+  position: sticky;
+  top: 0;
+  background-color: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-sideBar-background));
+  color: var(--vscode-foreground);
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--vscode-panel-border, var(--vscode-editorWidget-border));
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.qs-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-editorWidget-border));
+  vertical-align: top;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qs-table tbody tr {
+  cursor: pointer;
+}
+.qs-table tbody tr:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+.qs-table tbody tr:nth-child(even) {
+  background-color: var(--vscode-list-inactiveSelectionBackground, rgba(128,128,128,0.05));
+}
+
+.qs-sql-cell {
+  font-family: var(--vscode-editor-font-family, 'Courier New', monospace);
+  font-size: 11px;
+  color: var(--vscode-textPreformat-foreground, var(--vscode-foreground));
+}
+
+/* ---- Drilldown panel ---- */
+.qs-drilldown {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55vh;
+  background-color: var(--vscode-editor-background);
+  border-top: 2px solid var(--vscode-focusBorder, var(--vscode-panel-border));
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
+}
+
+.qs-drilldown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+  background-color: var(--vscode-sideBar-background);
+}
+
+.qs-drilldown-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.qs-drilldown-chart-section {
+  flex: 0 0 180px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+.qs-drilldown-chart-section canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 160px;
+}
+
+/* ---- Plan section ---- */
+.qs-plan-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.qs-plan-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+  background-color: var(--vscode-sideBar-background);
+}
+
+.qs-plan-label {
+  font-size: 12px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.qs-plan-container {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  position: relative;
+}
+
+.qs-plan-loading {
+  color: var(--vscode-descriptionForeground);
+  padding: 16px;
+}
+
+#plan-canvas {
+  display: inline-block;
+  transform-origin: top left;
+}
+
+/* ---- Plan tooltip ---- */
+.qs-plan-tooltip {
+  position: absolute;
+  background-color: var(--vscode-editorHoverWidget-background, #252526);
+  color: var(--vscode-editorHoverWidget-foreground, #ccc);
+  border: 1px solid var(--vscode-editorHoverWidget-border, #454545);
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  white-space: pre;
+  pointer-events: none;
+  z-index: 200;
+  max-width: 280px;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+}
