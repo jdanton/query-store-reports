@@ -7,10 +7,13 @@ import { QueryRunner } from './queryRunner';
 const runners = new Map<string, QueryRunner>();
 
 export function activate(context: vscode.ExtensionContext): void {
+  const log = vscode.window.createOutputChannel('Query Store Reports');
+  context.subscriptions.push(log);
+
   const registerCommand = (reportType: ReportType) => {
     return vscode.commands.registerCommand(`queryStore.${reportType}`, async (treeNode?: MssqlTreeNode) => {
       try {
-        const resolved = await resolveConnection(context, treeNode);
+        const resolved = await resolveConnection(context, treeNode, log);
         if (!resolved) {
           return;
         }

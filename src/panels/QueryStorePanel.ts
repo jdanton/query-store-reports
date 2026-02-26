@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
+import * as sql from 'mssql';
+import { randomBytes } from 'crypto';
 import { QueryRunner } from '../queryRunner';
 import { executeTopResourceConsuming, TopResourceConsumingParams } from '../queries/topResourceConsuming';
 import { executeRegressedQueries, RegressedQueriesParams } from '../queries/regressedQueries';
@@ -128,7 +129,8 @@ export class QueryStorePanel {
       }
       case 'removeForcedPlan': {
         const queryId = msg.queryId as number;
-        await this._removeForcedPlan(queryId);
+        const planId  = msg.planId  as number;
+        await this._removeForcedPlan(queryId, planId);
         break;
       }
     }
@@ -229,8 +231,8 @@ export class QueryStorePanel {
       const statsParams: ExecutionStatsParams = {
         queryId,
         replicaGroupId:    Number(mainParams?.replicaGroupId ?? 1),
-        intervalStartTime: new Date((mainParams?.intervalStartTime ?? mainParams?.recentStartTime) as string ?? hoursAgo(1)),
-        intervalEndTime:   new Date((mainParams?.intervalEndTime   ?? mainParams?.recentEndTime)   as string ?? new Date()),
+        intervalStartTime: (() => { const v = mainParams?.intervalStartTime ?? mainParams?.recentStartTime; return v ? new Date(v as string) : hoursAgo(1); })(),
+        intervalEndTime:   (() => { const v = mainParams?.intervalEndTime   ?? mainParams?.recentEndTime;   return v ? new Date(v as string) : new Date(); })(),
       };
       const statsRows = await executeExecutionStats(pool, statsParams);
       this._post({ type: 'drilldownData', rows: statsRows });
@@ -279,8 +281,8 @@ export class QueryStorePanel {
     try {
       const pool = await this.runner.getPool();
       const request = pool.request();
-      request.input('query_id', queryId);
-      request.input('plan_id', planId);
+      request.input('query_id', sql.BigInt, queryId);
+      request.input('plan_id', sql.BigInt, planId);
       await request.query(
         `EXEC sp_query_store_force_plan @query_id = @query_id, @plan_id = @plan_id`,
       );
@@ -292,13 +294,14 @@ export class QueryStorePanel {
     }
   }
 
-  private async _removeForcedPlan(queryId: number): Promise<void> {
+  private async _removeForcedPlan(queryId: number, planId: number): Promise<void> {
     try {
       const pool = await this.runner.getPool();
       const request = pool.request();
-      request.input('query_id', queryId);
+      request.input('query_id', sql.BigInt, queryId);
+      request.input('plan_id', sql.BigInt, planId);
       await request.query(
-        `EXEC sp_query_store_unforce_plan @query_id = @query_id, @plan_id = NULL`,
+        `EXEC sp_query_store_unforce_plan @query_id = @query_id, @plan_id = @plan_id`,
       );
       this._post({ type: 'removeForcedPlanResult', success: true, queryId });
       vscode.window.showInformationMessage(`Forced plan removed for query ${queryId}.`);
@@ -315,6 +318,8 @@ export class QueryStorePanel {
     const styleUri  = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'style.css'));
     const csp = webview.cspSource;
 
+    const nonce = randomBytes(16).toString('hex');
+
     const defaultNow    = new Date().toISOString();
     const defaultMinus1h = hoursAgo(1).toISOString();
     const defaultMinus7d = daysAgo(7).toISOString();
@@ -327,7 +332,7 @@ export class QueryStorePanel {
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; script-src ${csp}; style-src ${csp} 'unsafe-inline'; img-src ${csp} data:;">
+        content="default-src 'none'; script-src ${csp} 'nonce-${nonce}'; style-src ${csp} 'unsafe-inline'; img-src ${csp} data:;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="${styleUri}">
   <title>${reportTitle}</title>
@@ -383,8 +388,8 @@ export class QueryStorePanel {
       </div>
     </div>
   </div>
-  <script src="${chartUri}"></script>
-  <script src="${scriptUri}"></script>
+  <script nonce="${nonce}" src="${chartUri}"></script>
+  <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
   }
@@ -394,6 +399,7 @@ function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }

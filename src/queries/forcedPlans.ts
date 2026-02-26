@@ -50,6 +50,8 @@ SELECT
     MAX(p.last_execution_time) last_execution_time,
     COUNT(distinct p.plan_id) num_plans
 FROM sys.query_store_plan p
+    JOIN sys.query_store_runtime_stats rs ON rs.plan_id = p.plan_id
+WHERE rs.replica_group_id = @replica_group_id
 GROUP BY p.query_id
 HAVING MAX(CAST(p.is_forced_plan AS tinyint)) = 1
 )

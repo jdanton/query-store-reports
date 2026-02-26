@@ -10,6 +10,10 @@ export class QueryRunner {
     if (this.pool?.connected) {
       return this.pool;
     }
+    if (this.pool && !this.pool.connected) {
+      this.pool.close().catch(() => {});
+      this.pool = null;
+    }
     if (!this.connectPromise) {
       this.connectPromise = new sql.ConnectionPool(this.config)
         .connect()

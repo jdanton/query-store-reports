@@ -19,28 +19,26 @@ export interface MssqlConnectionProfile {
 // We use a loose type and extract connection info dynamically.
 export type MssqlTreeNode = Record<string, unknown>;
 
-const log = vscode.window.createOutputChannel('Query Store Reports');
-
 /**
  * Extract a connection profile from the mssql extension's tree node.
  * The TreeNodeInfo class uses getter properties (connectionInfo, label, nodeType, etc.)
  * so we probe for known property names on the object.
  */
-function extractFromTreeNode(node: MssqlTreeNode): { profile: MssqlConnectionProfile; database?: string } | undefined {
+function extractFromTreeNode(node: MssqlTreeNode, log?: vscode.OutputChannel): { profile: MssqlConnectionProfile; database?: string } | undefined {
   // The mssql extension's TreeNodeInfo exposes connectionInfo via a getter
   const connInfo = node.connectionInfo ?? node.connectionProfile ?? node.connection;
   if (!connInfo || typeof connInfo !== 'object') {
     // Log available property names for debugging
     const ownKeys = Object.getOwnPropertyNames(node);
     const protoKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(node) ?? {});
-    log.appendLine(`[tree-node] No connectionInfo found. Own keys: ${ownKeys.join(', ')}; Proto keys: ${protoKeys.join(', ')}`);
-    log.appendLine(`[tree-node] Raw: ${JSON.stringify(node, null, 2)}`);
+    log?.appendLine(`[tree-node] No connectionInfo found. Own keys: ${ownKeys.join(', ')}; Proto keys: ${protoKeys.join(', ')}`);
+    log?.appendLine(`[tree-node] Raw: ${JSON.stringify(node, null, 2)}`);
     return undefined;
   }
 
   const info = connInfo as Record<string, unknown>;
-  log.appendLine(`[tree-node] connectionInfo keys: ${Object.keys(info).join(', ')}`);
-  log.appendLine(`[tree-node] authenticationType: ${info.authenticationType}`);
+  log?.appendLine(`[tree-node] connectionInfo keys: ${Object.keys(info).join(', ')}`);
+  log?.appendLine(`[tree-node] authenticationType: ${info.authenticationType}`);
 
   const profile: MssqlConnectionProfile = {
     server: String(info.server ?? ''),
@@ -64,12 +62,13 @@ function extractFromTreeNode(node: MssqlTreeNode): { profile: MssqlConnectionPro
 export async function resolveConnection(
   context: vscode.ExtensionContext,
   treeNode?: MssqlTreeNode,
+  log?: vscode.OutputChannel,
 ): Promise<{ config: sql.config; label: string; database: string } | undefined> {
   let profile: MssqlConnectionProfile | undefined;
   let database: string | undefined;
 
   if (treeNode) {
-    const extracted = extractFromTreeNode(treeNode);
+    const extracted = extractFromTreeNode(treeNode, log);
     if (extracted?.profile.server) {
       profile = extracted.profile;
       database = extracted.database;

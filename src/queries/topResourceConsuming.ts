@@ -53,6 +53,11 @@ export async function executeTopResourceConsuming(
   pool: sql.ConnectionPool,
   params: TopResourceConsumingParams,
 ): Promise<TopResourceConsumingRow[]> {
+  const validMetrics = new Set(Object.keys(METRIC_EXPR));
+  if (!validMetrics.has(params.metric)) {
+    throw new Error(`Invalid metric: ${params.metric}`);
+  }
+
   const request = pool.request();
   request.input('results_row_count', sql.Int, params.resultsRowCount);
   request.input('interval_start_time', sql.DateTimeOffset, params.intervalStartTime);
