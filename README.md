@@ -2,6 +2,8 @@
 
 A cross-platform VS Code extension that brings SQL Server Management Studio's **Query Store** report suite directly into VS Code. Works on macOS, Linux, and Windows.
 
+![Query Store context menu](media/QueryStore.png)
+
 > **Requires** the [SQL Server (mssql)](https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql) extension — it is listed as a dependency and will be installed automatically.
 
 ---
