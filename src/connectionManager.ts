@@ -15,12 +15,50 @@ export interface MssqlConnectionProfile {
   port?: number;
 }
 
-// Shape of a tree node argument from the mssql extension
-export interface MssqlTreeNode {
-  connectionInfo?: MssqlConnectionProfile;
-  label?: string;
-  nodeType?: string;
-  nodePath?: string;
+// The mssql extension passes TreeNodeInfo class instances with getter properties.
+// We use a loose type and extract connection info dynamically.
+export type MssqlTreeNode = Record<string, unknown>;
+
+const log = vscode.window.createOutputChannel('Query Store Reports');
+
+/**
+ * Extract a connection profile from the mssql extension's tree node.
+ * The TreeNodeInfo class uses getter properties (connectionInfo, label, nodeType, etc.)
+ * so we probe for known property names on the object.
+ */
+function extractFromTreeNode(node: MssqlTreeNode): { profile: MssqlConnectionProfile; database?: string } | undefined {
+  // The mssql extension's TreeNodeInfo exposes connectionInfo via a getter
+  const connInfo = node.connectionInfo ?? node.connectionProfile ?? node.connection;
+  if (!connInfo || typeof connInfo !== 'object') {
+    // Log available property names for debugging
+    const ownKeys = Object.getOwnPropertyNames(node);
+    const protoKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(node) ?? {});
+    log.appendLine(`[tree-node] No connectionInfo found. Own keys: ${ownKeys.join(', ')}; Proto keys: ${protoKeys.join(', ')}`);
+    log.appendLine(`[tree-node] Raw: ${JSON.stringify(node, null, 2)}`);
+    return undefined;
+  }
+
+  const info = connInfo as Record<string, unknown>;
+  log.appendLine(`[tree-node] connectionInfo keys: ${Object.keys(info).join(', ')}`);
+  log.appendLine(`[tree-node] authenticationType: ${info.authenticationType}`);
+
+  const profile: MssqlConnectionProfile = {
+    server: String(info.server ?? ''),
+    authenticationType: String(info.authenticationType ?? ''),
+    database: info.database != null ? String(info.database) : undefined,
+    user: info.user != null ? String(info.user) : undefined,
+    password: info.password != null ? String(info.password) : undefined,
+    connectionName: (info.connectionName ?? info.profileName) != null ? String(info.connectionName ?? info.profileName) : undefined,
+    profileName: info.profileName != null ? String(info.profileName) : undefined,
+    encrypt: info.encrypt != null ? Boolean(info.encrypt) : undefined,
+    trustServerCertificate: info.trustServerCertificate != null ? Boolean(info.trustServerCertificate) : undefined,
+    port: info.port != null ? Number(info.port) : undefined,
+  };
+
+  // The database name may come from the tree node label (when right-clicking a database node)
+  const database = (node.label as string) ?? profile.database;
+
+  return { profile, database };
 }
 
 export async function resolveConnection(
@@ -30,12 +68,16 @@ export async function resolveConnection(
   let profile: MssqlConnectionProfile | undefined;
   let database: string | undefined;
 
-  if (treeNode?.connectionInfo) {
-    // Invoked from the right-click context menu on a database node
-    profile = treeNode.connectionInfo;
-    database = treeNode.label ?? treeNode.connectionInfo.database;
-  } else {
-    // Invoked from the command palette — pick a connection
+  if (treeNode) {
+    const extracted = extractFromTreeNode(treeNode);
+    if (extracted?.profile.server) {
+      profile = extracted.profile;
+      database = extracted.database;
+    }
+  }
+
+  if (!profile) {
+    // Invoked from the command palette or tree node extraction failed — pick a connection
     const picked = await pickConnection(context);
     if (!picked) {
       return undefined;
@@ -113,29 +155,52 @@ async function buildSqlConfig(
   profile: MssqlConnectionProfile,
   database: string,
 ): Promise<sql.config | undefined> {
+  // The mssql VS Code extension stores server as "host,port" (SQL Server convention),
+  // but the mssql npm package (tedious) expects host and port separately.
+  let server = profile.server;
+  let port = profile.port;
+  const commaIdx = server.indexOf(',');
+  if (commaIdx !== -1) {
+    const parsed = parseInt(server.substring(commaIdx + 1), 10);
+    if (!isNaN(parsed)) {
+      port = port ?? parsed;
+      server = server.substring(0, commaIdx);
+    }
+  }
+
   const authType = (profile.authenticationType ?? 'SqlLogin').toLowerCase();
   const baseOptions: sql.config['options'] = {
     encrypt: profile.encrypt !== false,
     trustServerCertificate: profile.trustServerCertificate ?? true,
     database,
+    port,
   };
-
-  if (profile.port) {
-    Object.assign(baseOptions, { port: profile.port });
-  }
 
   if (authType === 'integrated' || authType === 'windows') {
     return {
-      server: profile.server,
+      server,
       options: baseOptions,
       domain: undefined,
     };
   }
 
   if (authType === 'azuremfa' || authType === 'azureactivedirectory-mfa' || authType === 'azureactivedirectorymfa') {
+    // Use VS Code's built-in Microsoft auth provider to get a token for Azure SQL
+    const session = await vscode.authentication.getSession('microsoft', [
+      'https://database.windows.net/.default',
+    ], { createIfNone: true });
+
+    if (!session) {
+      vscode.window.showErrorMessage('Azure authentication was cancelled.');
+      return undefined;
+    }
+
     return {
-      server: profile.server,
-      authentication: { type: 'azure-active-directory-default', options: {} },
+      server,
+      authentication: {
+        type: 'azure-active-directory-access-token',
+        options: { token: session.accessToken },
+      },
       options: baseOptions,
     };
   }
@@ -170,7 +235,7 @@ async function buildSqlConfig(
   }
 
   return {
-    server: profile.server,
+    server,
     user,
     password,
     options: baseOptions,

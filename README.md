@@ -75,7 +75,7 @@ The extension reads connection profiles saved in the mssql extension (`mssql.con
 |-----------|----------|
 | SQL Login | Password is retrieved from VS Code's secret storage. If not saved, you'll be prompted once and offered the option to store it. |
 | Windows / Integrated | Uses the ambient Windows identity. |
-| Azure Active Directory | Uses the default Azure credential chain (works with `az login`, managed identity, etc.). |
+| Azure AD / Entra ID (MFA) | Authenticates via VS Code's built-in Microsoft auth provider — uses the same account you are signed into in VS Code. Works with Azure SQL Database and Managed Instance. |
 
 ---
 
@@ -142,7 +142,8 @@ All queries include a `@replica_group_id` parameter, which defaults to **1** (th
 - **Read replicas** — `replica_group_id = 1` always targets the primary. Secondary replica data requires manual parameter adjustment (future UI).
 - **Encrypted modules** — queries inside natively compiled or encrypted modules show as `<restricted text>` per SQL Server's own access controls.
 - **Plan XML** — very large plans (thousands of nodes) may render slowly. Use the Fit button to reset zoom.
-- **Windows Integrated auth on macOS** — requires a Kerberos ticket (`kinit`). Azure AD is the recommended alternative on non-Windows hosts.
+- **Windows Integrated auth on macOS** — requires a Kerberos ticket (`kinit`). Azure AD / Entra ID is the recommended alternative on non-Windows hosts.
+- **Server address format** — the extension handles both `host,port` (SQL Server convention) and separate port configuration automatically.
 
 ---
 

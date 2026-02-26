@@ -233,6 +233,8 @@ export class QueryStorePanel {
       const planRows = await executeQueryPlan(pool, planParams);
       if (planRows.length > 0 && planRows[0].query_plan) {
         this._post({ type: 'planData', xml: planRows[0].query_plan, isForcedPlan: planRows[0].is_forced_plan });
+      } else {
+        this._post({ type: 'planData', xml: '', isForcedPlan: false });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

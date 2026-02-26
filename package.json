@@ -2,7 +2,7 @@
   "name": "query-store-reports",
   "displayName": "SQL Server Query Store Reports",
   "description": "Cross-platform Query Store reports for SQL Server, integrated with the mssql extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "query-store-reports",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],
@@ -37,7 +37,7 @@
       "view/item/context": [
         {
           "submenu": "queryStore.submenu",
-          "when": "view == objectExplorer && viewItem == database",
+          "when": "view == objectExplorer && viewItem =~ /\\btype=(Database)\\b/",
           "group": "queryStore@1"
         }
       ],

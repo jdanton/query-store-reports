@@ -834,9 +834,15 @@ window.addEventListener('message', (event) => {
       break;
     }
 
-    case 'planData':
-      renderPlan(msg.xml as string, Boolean(msg.isForcedPlan));
+    case 'planData': {
+      const xml = msg.xml as string;
+      if (xml) {
+        renderPlan(xml, Boolean(msg.isForcedPlan));
+      } else {
+        planCanvas.innerHTML = '<div class="qs-plan-loading">No query plan available for this query.</div>';
+      }
       break;
+    }
 
     case 'forcePlanResult':
     case 'removeForcedPlanResult':

@@ -4,6 +4,18 @@ All notable changes to **SQL Server Query Store Reports** are documented here.
 
 ---
 
+## [0.2.0] — 2026-02-26
+
+### Fixed
+
+- **Azure Entra ID / MFA authentication** — replaced `azure-active-directory-default` (DefaultAzureCredential) with VS Code's built-in Microsoft auth provider (`vscode.authentication`). The extension now uses the same Microsoft account you are signed into in VS Code, which resolves "server is not configured to accept the token" errors on Azure SQL Managed Instance and Azure SQL Database.
+- **Server address with comma-delimited port** — the mssql extension stores servers as `host,3342` (SQL Server convention) but the node-mssql driver expects host and port separately. The extension now parses these automatically, fixing `ENOTFOUND` DNS errors for servers with non-default ports.
+- **Object Explorer context menu** — the "Query Store" submenu now appears when right-clicking database nodes. The `when` clause was updated to use regex matching (`viewItem =~ /\btype=(Database)\b/`) to match the mssql extension's structured context values.
+- **Tree node connection extraction** — improved extraction of connection profile from the mssql extension's `TreeNodeInfo` class instances, which use getter properties. Added diagnostic logging to the "Query Store Reports" output channel for debugging connection issues.
+- **Plan loading hang** — when a query plan is unavailable (NULL in Query Store), the drill-down panel now shows "No query plan available" instead of hanging indefinitely on "Loading plan...".
+
+---
+
 ## [0.1.0] — 2026-02-26
 
 ### Added
@@ -50,4 +62,4 @@ All notable changes to **SQL Server Query Store Reports** are documented here.
 - Query text copy button
 - Pinned/bookmarked queries across sessions
 - Plan comparison (side-by-side diff of two plans for the same query)
-- Azure SQL support validation & testing
+- Azure SQL Managed Instance & Azure SQL Database testing (basic support shipped in 0.2.0)
