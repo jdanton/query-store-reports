@@ -163,7 +163,7 @@ All queries include a `@replica_group_id` parameter, which defaults to **1** (th
 
 ## Known Limitations
 
-- **Query Store must be enabled** — if it is off, reports will return no data or an error.
+- **Query Store must be enabled** — if it is off, the extension will prompt you with an option to enable it (`ALTER DATABASE … SET QUERY_STORE = ON`). This requires ALTER permission on the database.
 - **Read replicas** — `replica_group_id = 1` always targets the primary. Secondary replica data requires manual parameter adjustment (future UI).
 - **Encrypted modules** — queries inside natively compiled or encrypted modules show as `<restricted text>` per SQL Server's own access controls.
 - **Plan XML** — very large plans (thousands of nodes) may render slowly. Use the Fit button to reset zoom.
