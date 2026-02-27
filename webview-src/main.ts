@@ -30,8 +30,8 @@ const drilldownClose   = getEl('drilldown-close');
 const planContainer    = getEl('plan-container');
 const planCanvas       = getEl('plan-canvas');
 const planTooltip      = getEl('plan-tooltip');
-const forcePlanBtn     = getEl<HTMLButtonElement>('force-plan-btn');
-const unforcePlanBtn   = getEl<HTMLButtonElement>('unforce-plan-btn');
+const forcePlanCheckbox = getEl<HTMLInputElement>('force-plan-checkbox');
+const forcePlanLabel    = getEl('force-plan-label');
 const planZoomFit  = getEl('plan-zoom-fit');
 const planZoomIn   = getEl('plan-zoom-in');
 const planZoomOut  = getEl('plan-zoom-out');
@@ -694,8 +694,7 @@ function openDrilldown(row: Record<string, unknown>): void {
   drilldownTitle.textContent = `Query ${queryId} — Execution Statistics & Plan`;
   drilldownSection.classList.remove('hidden');
   planCanvas.innerHTML = '<div class="qs-plan-loading">Loading plan…</div>';
-  forcePlanBtn.style.display = 'none';
-  unforcePlanBtn.style.display = 'none';
+  forcePlanLabel.style.display = 'none';
 
   vscode.postMessage({
     type: 'drilldown',
@@ -711,15 +710,10 @@ drilldownClose.addEventListener('click', () => {
   planCanvas.innerHTML = '';
 });
 
-forcePlanBtn.addEventListener('click', () => {
+forcePlanCheckbox.addEventListener('change', () => {
   if (currentDrilldownQueryId !== null && currentDrilldownPlanId !== null) {
-    vscode.postMessage({ type: 'forcePlan', queryId: currentDrilldownQueryId, planId: currentDrilldownPlanId });
-  }
-});
-
-unforcePlanBtn.addEventListener('click', () => {
-  if (currentDrilldownQueryId !== null) {
-    vscode.postMessage({ type: 'removeForcedPlan', queryId: currentDrilldownQueryId, planId: currentDrilldownPlanId });
+    const type = forcePlanCheckbox.checked ? 'forcePlan' : 'removeForcedPlan';
+    vscode.postMessage({ type, queryId: currentDrilldownQueryId, planId: currentDrilldownPlanId });
   }
 });
 
@@ -794,8 +788,7 @@ function requestPlan(planId: number): void {
   if (!currentDrilldownQueryId) return;
   currentDrilldownPlanId = planId;
   planCanvas.innerHTML = '<div class="qs-plan-loading">Loading plan…</div>';
-  forcePlanBtn.style.display = 'none';
-  unforcePlanBtn.style.display = 'none';
+  forcePlanLabel.style.display = 'none';
   vscode.postMessage({ type: 'getPlan', queryId: currentDrilldownQueryId, planId });
   updateLegendActiveState();
 }
@@ -844,9 +837,9 @@ function renderPlan(xml: string, isForcedPlan: boolean): void {
     });
   });
 
-  // Force plan buttons
-  forcePlanBtn.style.display   = isForcedPlan ? 'none' : '';
-  unforcePlanBtn.style.display = isForcedPlan ? '' : 'none';
+  // Force plan checkbox
+  forcePlanLabel.style.display = '';
+  forcePlanCheckbox.checked = isForcedPlan;
 }
 
 planZoomIn.addEventListener('click', () => {

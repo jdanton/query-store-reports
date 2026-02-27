@@ -11,6 +11,11 @@ import { executeOverallConsumption, OverallConsumptionParams } from '../queries/
 import { executeExecutionStats, ExecutionStatsParams } from '../queries/executionStats';
 import { executeQueryPlan, QueryPlanParams } from '../queries/queryPlan';
 
+function isTokenError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /token.*(expired|invalid)|login failed.*token/i.test(msg);
+}
+
 export enum ReportType {
   TopResources      = 'topResources',
   Regressed         = 'regressed',
@@ -140,7 +145,7 @@ export class QueryStorePanel {
     this._panel.webview.postMessage(msg).then(undefined, () => {});
   }
 
-  private async _loadMainData(params: Record<string, unknown>): Promise<void> {
+  private async _loadMainData(params: Record<string, unknown>, isRetry = false): Promise<void> {
     this._post({ type: 'loading' });
     try {
       const pool = await this.runner.getPool();
@@ -214,6 +219,10 @@ export class QueryStorePanel {
 
       this._post({ type: 'data', rows });
     } catch (err) {
+      if (!isRetry && isTokenError(err)) {
+        await this.runner.resetPool();
+        return this._loadMainData(params, true);
+      }
       const message = err instanceof Error ? err.message : String(err);
       this._post({ type: 'error', message });
     }
@@ -223,6 +232,7 @@ export class QueryStorePanel {
     queryId: number,
     planId: number,
     mainParams: Record<string, unknown>,
+    isRetry = false,
   ): Promise<void> {
     try {
       const pool = await this.runner.getPool();
@@ -256,6 +266,10 @@ export class QueryStorePanel {
         this._post({ type: 'planData', xml: '', isForcedPlan: false, planId: 0 });
       }
     } catch (err) {
+      if (!isRetry && isTokenError(err)) {
+        await this.runner.resetPool();
+        return this._loadDrilldown(queryId, planId, mainParams, true);
+      }
       const message = err instanceof Error ? err.message : String(err);
       this._post({ type: 'error', message });
     }
@@ -375,8 +389,7 @@ export class QueryStorePanel {
       <div id="plan-section" class="qs-plan-section">
         <div class="qs-plan-toolbar">
           <span class="qs-plan-label">Query Execution Plan</span>
-          <button id="force-plan-btn" class="qs-btn qs-btn-sm" style="display:none">Force This Plan</button>
-          <button id="unforce-plan-btn" class="qs-btn qs-btn-sm qs-btn-danger" style="display:none">Remove Forced Plan</button>
+          <label id="force-plan-label" class="qs-force-plan-toggle" style="display:none"><input type="checkbox" id="force-plan-checkbox" /> Force Plan</label>
           <button id="plan-zoom-fit" class="qs-btn qs-btn-sm">Fit</button>
           <button id="plan-zoom-in"  class="qs-btn qs-btn-sm">+</button>
           <button id="plan-zoom-out" class="qs-btn qs-btn-sm">−</button>

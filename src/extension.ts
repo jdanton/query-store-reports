@@ -18,13 +18,16 @@ export function activate(context: vscode.ExtensionContext): void {
           return;
         }
 
-        const { config, label, database } = resolved;
-        const runnerKey = `${config.server}:${database}`;
+        const { configFactory, label, database, server } = resolved;
+        const runnerKey = `${server}:${database}`;
 
         let runner = runners.get(runnerKey);
         if (!runner) {
-          runner = new QueryRunner(config);
+          runner = new QueryRunner(configFactory);
           runners.set(runnerKey, runner);
+        } else {
+          // Update the factory so reconnects use a fresh token
+          runner.updateConfigFactory(configFactory);
         }
 
         QueryStorePanel.createOrShow(context.extensionUri, reportType, runner, label, database);

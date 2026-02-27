@@ -306,6 +306,14 @@ body {
   overflow: hidden;
 }
 
+.qs-force-plan-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .qs-plan-toolbar {
   display: flex;
   align-items: center;

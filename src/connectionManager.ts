@@ -59,11 +59,13 @@ function extractFromTreeNode(node: MssqlTreeNode, log?: vscode.OutputChannel): {
   return { profile, database };
 }
 
+export type ConfigFactory = () => Promise<sql.config>;
+
 export async function resolveConnection(
   context: vscode.ExtensionContext,
   treeNode?: MssqlTreeNode,
   log?: vscode.OutputChannel,
-): Promise<{ config: sql.config; label: string; database: string } | undefined> {
+): Promise<{ configFactory: ConfigFactory; label: string; database: string; server: string } | undefined> {
   let profile: MssqlConnectionProfile | undefined;
   let database: string | undefined;
 
@@ -95,13 +97,29 @@ export async function resolveConnection(
     }
   }
 
+  // Validate that we can build a config at least once (prompts for password, etc.)
   const config = await buildSqlConfig(context, profile, database);
   if (!config) {
     return undefined;
   }
 
+  // For Azure MFA, create a factory that fetches a fresh token each time.
+  // For other auth types, the config is static.
+  const authType = (profile.authenticationType ?? 'SqlLogin').toLowerCase();
+  const isAzureMfa = authType === 'azuremfa' || authType === 'azureactivedirectory-mfa' || authType === 'azureactivedirectorymfa';
+  const savedProfile = profile;
+  const savedDatabase = database;
+
+  const configFactory: ConfigFactory = isAzureMfa
+    ? () => buildSqlConfig(context, savedProfile, savedDatabase).then((c) => {
+        if (!c) { throw new Error('Azure authentication was cancelled.'); }
+        return c;
+      })
+    : async () => config;
+
   const label = profile.connectionName ?? profile.profileName ?? `${profile.server}/${database}`;
-  return { config, label, database };
+  const server = config.server ?? profile.server;
+  return { configFactory, label, database, server };
 }
 
 async function pickConnection(

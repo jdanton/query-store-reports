@@ -1,10 +1,26 @@
 import * as sql from 'mssql';
 
+export type ConfigFactory = () => Promise<sql.config>;
+
 export class QueryRunner {
   private pool: sql.ConnectionPool | null = null;
   private connectPromise: Promise<sql.ConnectionPool> | null = null;
 
-  constructor(private config: sql.config) {}
+  constructor(private configFactory: ConfigFactory) {}
+
+  /** Replace the config factory (e.g. when a fresh token is available). */
+  updateConfigFactory(factory: ConfigFactory): void {
+    this.configFactory = factory;
+  }
+
+  /** Force the pool to close so the next getPool() reconnects with a fresh config. */
+  async resetPool(): Promise<void> {
+    this.connectPromise = null;
+    if (this.pool) {
+      await this.pool.close().catch(() => {});
+      this.pool = null;
+    }
+  }
 
   async getPool(): Promise<sql.ConnectionPool> {
     if (this.pool?.connected) {
@@ -15,8 +31,8 @@ export class QueryRunner {
       this.pool = null;
     }
     if (!this.connectPromise) {
-      this.connectPromise = new sql.ConnectionPool(this.config)
-        .connect()
+      this.connectPromise = this.configFactory()
+        .then((config) => new sql.ConnectionPool(config).connect())
         .then((p) => {
           this.pool = p;
           this.connectPromise = null;
