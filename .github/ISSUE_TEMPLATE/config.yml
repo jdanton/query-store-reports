@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Development Guide
+    url: https://github.com/jdanton/query-store-reports/blob/main/DEVELOPMENT.md
+    about: Read the development guide for contributing code
+  - name: Security Issue
+    url: https://github.com/jdanton/query-store-reports/blob/main/SECURITY.md
+    about: Please review our security policy for reporting vulnerabilities
+  - name: Code of Conduct
+    url: https://github.com/jdanton/query-store-reports/blob/main/CODE_OF_CONDUCT.md
+    about: Review our code of conduct for community guidelines

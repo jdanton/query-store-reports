@@ -1,7 +1,7 @@
 {
   "name": "query-store-reports",
   "displayName": "SQL Server Query Store Reports",
-  "description": "Cross-platform Query Store reports for SQL Server, integrated with the mssql extension",
+  "description": "A cross-platform VS Code extension that brings SQL Server Management Studio's Query Store report suite directly into VS Code. Works on macOS, Linux, and Windows.",
   "version": "0.4.0",
   "publisher": "query-store-reports",
   "engines": {
