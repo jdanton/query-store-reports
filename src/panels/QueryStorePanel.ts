@@ -10,6 +10,7 @@ import { executeForcedPlans, ForcedPlansParams } from '../queries/forcedPlans';
 import { executeOverallConsumption, OverallConsumptionParams } from '../queries/overallConsumption';
 import { executeExecutionStats, ExecutionStatsParams } from '../queries/executionStats';
 import { executeQueryPlan, QueryPlanParams } from '../queries/queryPlan';
+import { QueryStoreReplicaRow } from '../queries/queryStoreReplicas';
 
 function isTokenError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
@@ -53,6 +54,7 @@ export class QueryStorePanel {
     runner: QueryRunner,
     connectionLabel: string,
     database: string,
+    replicas: QueryStoreReplicaRow[],
   ): void {
     const key = `${connectionLabel}::${database}::${reportType}`;
     const existing = QueryStorePanel.currentPanels.get(key);
@@ -72,7 +74,7 @@ export class QueryStorePanel {
       },
     );
 
-    new QueryStorePanel(panel, extensionUri, reportType, runner, connectionLabel, database, key);
+    new QueryStorePanel(panel, extensionUri, reportType, runner, connectionLabel, database, key, replicas);
   }
 
   private constructor(
@@ -83,6 +85,7 @@ export class QueryStorePanel {
     private readonly connectionLabel: string,
     private readonly database: string,
     private readonly key: string,
+    private readonly replicas: QueryStoreReplicaRow[],
   ) {
     this._panel = panel;
     QueryStorePanel.currentPanels.set(key, this);
@@ -361,6 +364,7 @@ export class QueryStorePanel {
     data-default-minus1h="${defaultMinus1h}"
     data-default-minus7d="${defaultMinus7d}"
     data-default-minus30d="${defaultMinus30d}"
+    data-replicas="${escapeHtml(JSON.stringify(this.replicas))}"
   >
     <header class="qs-header">
       <div class="qs-header-title">

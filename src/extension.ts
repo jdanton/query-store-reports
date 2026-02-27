@@ -3,6 +3,7 @@ import { resolveConnection, MssqlTreeNode } from './connectionManager';
 import { QueryStorePanel, ReportType } from './panels/QueryStorePanel';
 import { QueryRunner } from './queryRunner';
 import { executeQueryStoreStatus } from './queries/queryStoreStatus';
+import { executeQueryStoreReplicas } from './queries/queryStoreReplicas';
 
 // Keep runners alive so connections are reused across multiple panels for the same DB
 const runners = new Map<string, QueryRunner>();
@@ -36,7 +37,10 @@ export function activate(context: vscode.ExtensionContext): void {
           return;
         }
 
-        QueryStorePanel.createOrShow(context.extensionUri, reportType, runner, label, database);
+        const pool = await runner.getPool();
+        const replicas = await executeQueryStoreReplicas(pool);
+
+        QueryStorePanel.createOrShow(context.extensionUri, reportType, runner, label, database, replicas);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         vscode.window.showErrorMessage(`Query Store: ${message}`);

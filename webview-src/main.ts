@@ -43,6 +43,13 @@ const defaultMinus1h = app.dataset.defaultMinus1h!;
 const defaultMinus7d = app.dataset.defaultMinus7d!;
 const defaultMinus30d = app.dataset.defaultMinus30d!;
 
+interface ReplicaInfo { replica_group_id: number; replica_name: string; }
+const replicas: ReplicaInfo[] = (() => {
+  try { return JSON.parse(app.dataset.replicas ?? '[]'); }
+  catch { return [{ replica_group_id: 1, replica_name: 'Primary' }]; }
+})();
+const showReplicaSelector = replicas.length > 1;
+
 let currentParams: Record<string, unknown> = {};
 let currentRows: Record<string, unknown>[] = [];
 let currentChart: any = null;
@@ -155,6 +162,22 @@ function buildTimeRangeControls(defaultPreset: string): {
   };
 }
 
+function buildReplicaSelector(): {
+  elements: HTMLElement[];
+  getReplicaGroupId: () => number;
+} | null {
+  if (!showReplicaSelector) { return null; }
+  const options = replicas.map(r => ({
+    value: String(r.replica_group_id),
+    label: r.replica_name || `Replica ${r.replica_group_id}`,
+  }));
+  const select = makeSelect(options, '1');
+  return {
+    elements: [makeLabel('Replica:'), select],
+    getReplicaGroupId: () => parseInt(select.value, 10) || 1,
+  };
+}
+
 function buildToolbar(): void {
   toolbar.innerHTML = '';
 
@@ -173,11 +196,13 @@ function buildToolbar(): void {
       { value: 'rowcount',      label: 'Row Count' },
     ], 'duration');
     const minPlansInput = makeInput('number', '1', { min: '1', max: '100', style: 'width:60px' });
+    const replicaSelector = buildReplicaSelector();
 
     toolbar.appendChild(makeGroup(...timeEls));
     toolbar.appendChild(makeGroup(makeLabel('Metric:'), metricSelect));
     toolbar.appendChild(makeGroup(makeLabel('Top:'), rowCountInput));
     toolbar.appendChild(makeGroup(makeLabel('Min Plans:'), minPlansInput));
+    if (replicaSelector) { toolbar.appendChild(makeGroup(...replicaSelector.elements)); }
     toolbar.appendChild(refresh);
 
     refresh.addEventListener('click', () => {
@@ -187,7 +212,7 @@ function buildToolbar(): void {
         resultsRowCount: parseInt(rowCountInput.value, 10) || 25,
         metric: metricSelect.value,
         minPlans: parseInt(minPlansInput.value, 10) || 1,
-        replicaGroupId: 1,
+        replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1,
       };
       requestData();
     });
@@ -197,7 +222,7 @@ function buildToolbar(): void {
       resultsRowCount: 25,
       metric: 'duration',
       minPlans: 1,
-      replicaGroupId: 1,
+      replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1,
     };
 
   } else if (reportType === 'regressed') {
@@ -208,11 +233,13 @@ function buildToolbar(): void {
     ], '7d');
     const minExecInput  = makeInput('number', '1', { min: '1', style: 'width:60px' });
     const rowCountInput = makeInput('number', '25', { min: '1', max: '200', style: 'width:70px' });
+    const replicaSelector = buildReplicaSelector();
 
     toolbar.appendChild(makeGroup(makeLabel('Recent Period:'), recentPreset));
     toolbar.appendChild(makeGroup(makeLabel('History Period:'), histPreset));
     toolbar.appendChild(makeGroup(makeLabel('Min Executions:'), minExecInput));
     toolbar.appendChild(makeGroup(makeLabel('Top:'), rowCountInput));
+    if (replicaSelector) { toolbar.appendChild(makeGroup(...replicaSelector.elements)); }
     toolbar.appendChild(refresh);
 
     const getParams = () => {
@@ -225,7 +252,7 @@ function buildToolbar(): void {
         historyEndTime:   histDates.end.toISOString(),
         minExecCount:     parseInt(minExecInput.value, 10) || 1,
         resultsRowCount:  parseInt(rowCountInput.value, 10) || 25,
-        replicaGroupId: 1,
+        replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1,
       };
     };
     refresh.addEventListener('click', () => { currentParams = getParams(); requestData(); });
@@ -234,9 +261,11 @@ function buildToolbar(): void {
   } else if (reportType === 'highVariation') {
     const { elements: timeEls, getStart, getEnd } = buildTimeRangeControls('1h');
     const rowCountInput = makeInput('number', '25', { min: '1', max: '200', style: 'width:70px' });
+    const replicaSelector = buildReplicaSelector();
 
     toolbar.appendChild(makeGroup(...timeEls));
     toolbar.appendChild(makeGroup(makeLabel('Top:'), rowCountInput));
+    if (replicaSelector) { toolbar.appendChild(makeGroup(...replicaSelector.elements)); }
     toolbar.appendChild(refresh);
 
     refresh.addEventListener('click', () => {
@@ -244,18 +273,20 @@ function buildToolbar(): void {
         intervalStartTime: getStart(),
         intervalEndTime: getEnd(),
         resultsRowCount: parseInt(rowCountInput.value, 10) || 25,
-        replicaGroupId: 1,
+        replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1,
       };
       requestData();
     });
-    currentParams = { intervalStartTime: defaultMinus1h, intervalEndTime: defaultNow, resultsRowCount: 25, replicaGroupId: 1 };
+    currentParams = { intervalStartTime: defaultMinus1h, intervalEndTime: defaultNow, resultsRowCount: 25, replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1 };
 
   } else if (reportType === 'waitStats') {
     const { elements: timeEls, getStart, getEnd } = buildTimeRangeControls('1h');
     const rowCountInput = makeInput('number', '10', { min: '1', max: '100', style: 'width:70px' });
+    const replicaSelector = buildReplicaSelector();
 
     toolbar.appendChild(makeGroup(...timeEls));
     toolbar.appendChild(makeGroup(makeLabel('Top:'), rowCountInput));
+    if (replicaSelector) { toolbar.appendChild(makeGroup(...replicaSelector.elements)); }
     toolbar.appendChild(refresh);
 
     refresh.addEventListener('click', () => {
@@ -263,16 +294,18 @@ function buildToolbar(): void {
         intervalStartTime: getStart(),
         intervalEndTime: getEnd(),
         resultsRowCount: parseInt(rowCountInput.value, 10) || 10,
-        replicaGroupId: 1,
+        replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1,
       };
       requestData();
     });
-    currentParams = { intervalStartTime: defaultMinus1h, intervalEndTime: defaultNow, resultsRowCount: 10, replicaGroupId: 1 };
+    currentParams = { intervalStartTime: defaultMinus1h, intervalEndTime: defaultNow, resultsRowCount: 10, replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1 };
 
   } else if (reportType === 'forcedPlans') {
+    const replicaSelector = buildReplicaSelector();
+    if (replicaSelector) { toolbar.appendChild(makeGroup(...replicaSelector.elements)); }
     toolbar.appendChild(refresh);
-    refresh.addEventListener('click', () => { currentParams = { replicaGroupId: 1 }; requestData(); });
-    currentParams = { replicaGroupId: 1 };
+    refresh.addEventListener('click', () => { currentParams = { replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1 }; requestData(); });
+    currentParams = { replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1 };
 
   } else if (reportType === 'overallConsumption') {
     const { elements: timeEls, getStart, getEnd } = buildTimeRangeControls('30d');
@@ -307,19 +340,22 @@ function buildToolbar(): void {
     }
     (app as any)._consumptionCheckboxes = checkboxes;
 
+    const replicaSelector = buildReplicaSelector();
+
     toolbar.appendChild(makeGroup(...timeEls));
     toolbar.appendChild(cbGroup);
+    if (replicaSelector) { toolbar.appendChild(makeGroup(...replicaSelector.elements)); }
     toolbar.appendChild(refresh);
 
     refresh.addEventListener('click', () => {
       currentParams = {
         intervalStartTime: getStart(),
         intervalEndTime: getEnd(),
-        replicaGroupId: 1,
+        replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1,
       };
       requestData();
     });
-    currentParams = { intervalStartTime: defaultMinus30d, intervalEndTime: defaultNow, replicaGroupId: 1 };
+    currentParams = { intervalStartTime: defaultMinus30d, intervalEndTime: defaultNow, replicaGroupId: replicaSelector?.getReplicaGroupId() ?? 1 };
   }
 }
 

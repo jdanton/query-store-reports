@@ -157,14 +157,13 @@ Click any row in a report grid to open the drill-down panel. The lower section r
 
 ## Replica Groups
 
-All queries include a `@replica_group_id` parameter, which defaults to **1** (the primary replica). This is relevant for Always On Availability Groups and Azure SQL Hyperscale where Query Store captures per-replica statistics. A replica selector will be added in a future release.
+All queries include a `@replica_group_id` parameter, which defaults to **1** (the primary replica). On SQL Server 2022+ instances with Always On Availability Groups or Azure SQL Hyperscale, the extension automatically detects available replicas by querying `sys.query_store_replicas`. When multiple replicas are found, a **Replica** dropdown appears in the toolbar allowing you to view Query Store statistics for any replica. On older SQL Server versions where this DMV does not exist, the selector is hidden and the primary replica is used automatically.
 
 ---
 
 ## Known Limitations
 
 - **Query Store must be enabled** — if it is off, the extension will prompt you with an option to enable it (`ALTER DATABASE … SET QUERY_STORE = ON`). This requires ALTER permission on the database.
-- **Read replicas** — `replica_group_id = 1` always targets the primary. Secondary replica data requires manual parameter adjustment (future UI).
 - **Encrypted modules** — queries inside natively compiled or encrypted modules show as `<restricted text>` per SQL Server's own access controls.
 - **Plan XML** — very large plans (thousands of nodes) may render slowly. Use the Fit button to reset zoom.
 - **Windows Integrated auth on macOS** — requires a Kerberos ticket (`kinit`). Azure AD / Entra ID is the recommended alternative on non-Windows hosts.
