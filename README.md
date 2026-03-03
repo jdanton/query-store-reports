@@ -30,9 +30,9 @@ Every query-level report supports **drill-down**: click any row to open a split 
 
 - VS Code **1.85** or later
 - [SQL Server (mssql)](https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql) extension
-- SQL Server **2016** or later (Query Store was introduced in SQL Server 2016)
+- SQL Server **2016** or later (Query Store was introduced in SQL Server 2016) 
 - Query Store must be **enabled** on the target database:
-  ```sql
+  ```sql 
   ALTER DATABASE [YourDatabase] SET QUERY_STORE = ON;
   ```
 
