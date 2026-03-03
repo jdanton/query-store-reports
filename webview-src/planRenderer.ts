@@ -29,9 +29,91 @@ const V_GAP  = 60;
 
 // ---- XML Parsing ----
 
+/**
+ * Sanitize incoming plan XML to remove potentially dangerous elements and attributes
+ * that could lead to script execution when rendered.
+ */
+function sanitizePlanXml(xml: string): string {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'application/xml');
+
+    const parseError = doc.querySelector('parsererror');
+    if (parseError) {
+      // If the XML is not well-formed, just return it as-is and let the main
+      // parsePlan logic handle the parse error as before.
+      return xml;
+    }
+
+    const dangerousTags = new Set([
+      'script',
+      'style',
+      'iframe',
+      'object',
+      'embed',
+      'link',
+      'meta'
+    ]);
+
+    const isDangerousAttribute = (name: string, value: string): boolean => {
+      const lowerName = name.toLowerCase();
+      if (lowerName.startsWith('on')) {
+        // Event handlers like onclick, onload, etc.
+        return true;
+      }
+      if (lowerName === 'href' || lowerName === 'xlink:href' || lowerName === 'src') {
+        const trimmed = value.trim().toLowerCase();
+        // Disallow javascript:, data:, vbscript:, etc.
+        if (trimmed.startsWith('javascript:') || trimmed.startsWith('data:') || trimmed.startsWith('vbscript:')) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const walk = (node: Node): void => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as Element;
+        const tagName = el.tagName.toLowerCase();
+
+        if (dangerousTags.has(tagName)) {
+          if (el.parentNode) {
+            el.parentNode.removeChild(el);
+          }
+          return;
+        }
+
+        // Remove dangerous attributes
+        const attrs = Array.from(el.attributes);
+        for (const attr of attrs) {
+          if (isDangerousAttribute(attr.name, attr.value)) {
+            el.removeAttribute(attr.name);
+          }
+        }
+      }
+
+      // Copy the childNodes first since we'll potentially mutate during traversal
+      const children = Array.from(node.childNodes);
+      for (const child of children) {
+        walk(child);
+      }
+    };
+
+    walk(doc.documentElement);
+
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(doc);
+  } catch {
+    // On any unexpected error, fall back to the original string so existing
+    // error handling continues to work.
+    return xml;
+  }
+}
+
 export function parsePlan(xml: string): PlanNode | null {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'application/xml');
+  const safeXml = sanitizePlanXml(xml);
+  const doc = parser.parseFromString(safeXml, 'application/xml');
 
   const parseError = doc.querySelector('parsererror');
   if (parseError) {
