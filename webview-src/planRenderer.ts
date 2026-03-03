@@ -30,13 +30,33 @@ const V_GAP  = 60;
 // ---- XML Parsing ----
 
 /**
+ * Strip DOCTYPE declarations (including internal subsets with entity definitions)
+ * to prevent XML entity expansion attacks (billion laughs / XML bomb).
+ * SQL Server execution plan XML never contains DOCTYPE declarations.
+ */
+function stripDtd(xml: string): string {
+  const idx = xml.indexOf('<!DOCTYPE');
+  if (idx === -1) { return xml; }
+  let depth = 0;
+  for (let i = idx; i < xml.length; i++) {
+    if (xml[i] === '[') { depth++; }
+    else if (xml[i] === ']') { depth--; }
+    else if (xml[i] === '>' && depth === 0) {
+      return xml.substring(0, idx) + xml.substring(i + 1);
+    }
+  }
+  return xml.substring(0, idx);
+}
+
+/**
  * Sanitize incoming plan XML to remove potentially dangerous elements and attributes
  * that could lead to script execution when rendered.
  */
 function sanitizePlanXml(xml: string): string {
   try {
+    const stripped = stripDtd(xml);
     const parser = new DOMParser();
-    const doc = parser.parseFromString(xml, 'application/xml');
+    const doc = parser.parseFromString(stripped, 'application/xml');
 
     const parseError = doc.querySelector('parsererror');
     if (parseError) {
@@ -49,10 +69,12 @@ function sanitizePlanXml(xml: string): string {
       'script',
       'style',
       'iframe',
-      'object',
       'embed',
       'link',
-      'meta'
+      'meta',
+      // Note: 'object' is intentionally excluded — SQL Server plan XML uses
+      // <Object> elements for table/index metadata, and this XML is parsed
+      // for data extraction only, never rendered as HTML.
     ]);
 
     const isDangerousAttribute = (name: string, value: string): boolean => {
@@ -104,15 +126,15 @@ function sanitizePlanXml(xml: string): string {
     const serializer = new XMLSerializer();
     return serializer.serializeToString(doc);
   } catch {
-    // On any unexpected error, fall back to the original string so existing
-    // error handling continues to work.
-    return xml;
+    // On any unexpected error, fall back to DTD-stripped string so existing
+    // error handling continues to work without entity expansion risk.
+    return stripDtd(xml);
   }
 }
 
 export function parsePlan(xml: string): PlanNode | null {
   const parser = new DOMParser();
-  const safeXml = sanitizePlanXml(xml);
+  const safeXml = stripDtd(sanitizePlanXml(xml));
   const doc = parser.parseFromString(safeXml, 'application/xml');
 
   const parseError = doc.querySelector('parsererror');

@@ -279,3 +279,106 @@ describe('renderPlanSvg', () => {
     expect(svg).toContain('dbo.Users.PK_Users');
   });
 });
+
+// ---- Security: XML bomb / XSS ----
+
+describe('XML bomb protection', () => {
+  it('strips DOCTYPE with entity expansion (billion laughs)', () => {
+    const xmlBomb = `<?xml version="1.0"?>
+<!DOCTYPE lolz [
+  <!ENTITY lol "lol">
+  <!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
+]>
+<ShowPlanXML xmlns="http://schemas.microsoft.com/sqlserver/2004/07/showplan" Version="1.2">
+  <BatchSequence><Batch><Statements>
+    <StmtSimple StatementText="SELECT 1">
+      <QueryPlan>
+        <RelOp NodeId="0" PhysicalOp="Constant Scan" LogicalOp="Constant Scan"
+               EstimateRows="1" EstimateCPU="0" EstimateIO="0"
+               EstimateRebinds="0" EstimateRewinds="0" EstimateExecutions="1"
+               AvgRowSize="10" TotalSubtreeCost="0.0001" Parallel="0">
+          <ConstantScan />
+        </RelOp>
+      </QueryPlan>
+    </StmtSimple>
+  </Statements></Batch></BatchSequence>
+</ShowPlanXML>`;
+
+    const root = parsePlan(xmlBomb);
+    expect(root).not.toBeNull();
+    expect(root!.physicalOp).toBe('Constant Scan');
+  });
+
+  it('handles simple DOCTYPE gracefully', () => {
+    const xml = `<?xml version="1.0"?>
+<!DOCTYPE foo>
+<ShowPlanXML xmlns="http://schemas.microsoft.com/sqlserver/2004/07/showplan" Version="1.2">
+  <BatchSequence><Batch><Statements>
+    <StmtSimple StatementText="SELECT 1">
+      <QueryPlan>
+        <RelOp NodeId="0" PhysicalOp="Constant Scan" LogicalOp="Constant Scan"
+               EstimateRows="1" EstimateCPU="0" EstimateIO="0"
+               EstimateRebinds="0" EstimateRewinds="0" EstimateExecutions="1"
+               AvgRowSize="10" TotalSubtreeCost="0.0001" Parallel="0">
+          <ConstantScan />
+        </RelOp>
+      </QueryPlan>
+    </StmtSimple>
+  </Statements></Batch></BatchSequence>
+</ShowPlanXML>`;
+
+    const root = parsePlan(xml);
+    expect(root).not.toBeNull();
+  });
+});
+
+describe('XSS protection', () => {
+  it('escapes operator names containing script tags in SVG output', () => {
+    const xssXml = `<?xml version="1.0"?>
+<ShowPlanXML xmlns="http://schemas.microsoft.com/sqlserver/2004/07/showplan" Version="1.2">
+  <BatchSequence><Batch><Statements>
+    <StmtSimple StatementText="SELECT 1">
+      <QueryPlan>
+        <RelOp NodeId="0" PhysicalOp="&lt;script&gt;alert(1)&lt;/script&gt;" LogicalOp="Normal"
+               EstimateRows="1" EstimateCPU="0" EstimateIO="0"
+               EstimateRebinds="0" EstimateRewinds="0" EstimateExecutions="1"
+               AvgRowSize="10" TotalSubtreeCost="0.0001" Parallel="0">
+          <ConstantScan />
+        </RelOp>
+      </QueryPlan>
+    </StmtSimple>
+  </Statements></Batch></BatchSequence>
+</ShowPlanXML>`;
+
+    const root = parsePlan(xssXml);
+    expect(root).not.toBeNull();
+    const svg = renderPlanSvg(root!);
+    expect(svg).not.toContain('<script>');
+    expect(svg).toContain('&lt;script&gt;');
+  });
+
+  it('escapes object names containing HTML in SVG output', () => {
+    const xssXml = `<?xml version="1.0"?>
+<ShowPlanXML xmlns="http://schemas.microsoft.com/sqlserver/2004/07/showplan" Version="1.2">
+  <BatchSequence><Batch><Statements>
+    <StmtSimple StatementText="SELECT 1">
+      <QueryPlan>
+        <RelOp NodeId="0" PhysicalOp="Index Scan" LogicalOp="Index Scan"
+               EstimateRows="1" EstimateCPU="0" EstimateIO="0"
+               EstimateRebinds="0" EstimateRewinds="0" EstimateExecutions="1"
+               AvgRowSize="10" TotalSubtreeCost="0.0001" Parallel="0">
+          <IndexScan>
+            <Object Schema="[dbo]" Table="[&lt;img onerror=alert(1)&gt;]" Index="[IX_Test]" />
+          </IndexScan>
+        </RelOp>
+      </QueryPlan>
+    </StmtSimple>
+  </Statements></Batch></BatchSequence>
+</ShowPlanXML>`;
+
+    const root = parsePlan(xssXml);
+    expect(root).not.toBeNull();
+    const svg = renderPlanSvg(root!);
+    expect(svg).not.toContain('<img');
+  });
+});
