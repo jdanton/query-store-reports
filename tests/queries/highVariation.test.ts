@@ -34,6 +34,17 @@ describe('executeHighVariation', () => {
     expect(state.querySql).toContain('SUM(rs.count_executions) > 1');
   });
 
+  it('includes execution type breakdown columns', async () => {
+    const { pool, state } = createMockPool();
+    await executeHighVariation(pool, baseParams);
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 0 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 3 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 4 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain('regular_executions');
+    expect(state.querySql).toContain('aborted_executions');
+    expect(state.querySql).toContain('exception_executions');
+  });
+
   it('returns recordset from pool', async () => {
     const mockRows = [{ query_id: 7, variation_duration: 3.5 }];
     const { pool } = createMockPool(mockRows);

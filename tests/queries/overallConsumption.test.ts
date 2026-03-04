@@ -32,6 +32,17 @@ describe('executeOverallConsumption', () => {
     expect(state.querySql).toContain('OPTION (MAXRECURSION 0)');
   });
 
+  it('includes execution type breakdown columns', async () => {
+    const { pool, state } = createMockPool();
+    await executeOverallConsumption(pool, baseParams);
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 0 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 3 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 4 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain('total_regular_executions');
+    expect(state.querySql).toContain('total_aborted_executions');
+    expect(state.querySql).toContain('total_exception_executions');
+  });
+
   it('returns recordset from pool', async () => {
     const mockRows = [{ bucket_start: new Date(), total_duration: 1000 }];
     const { pool } = createMockPool(mockRows);

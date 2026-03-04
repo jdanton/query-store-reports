@@ -56,6 +56,17 @@ describe('executeTopResourceConsuming', () => {
     expect(state.querySql).toContain('HAVING COUNT(distinct p.plan_id) >= @min_plans');
   });
 
+  it('includes execution type breakdown columns', async () => {
+    const { pool, state } = createMockPool();
+    await executeTopResourceConsuming(pool, baseParams);
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 0 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 3 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 4 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain('regular_executions');
+    expect(state.querySql).toContain('aborted_executions');
+    expect(state.querySql).toContain('exception_executions');
+  });
+
   it('returns recordset from pool', async () => {
     const mockRows = [{ query_id: 1, metric_value: 100 }];
     const { pool } = createMockPool(mockRows);

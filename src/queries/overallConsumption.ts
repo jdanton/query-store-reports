@@ -8,6 +8,9 @@ export interface OverallConsumptionParams {
 
 export interface OverallConsumptionRow {
   total_count_executions: number;
+  total_regular_executions: number;
+  total_aborted_executions: number;
+  total_exception_executions: number;
   total_duration: number;
   total_cpu_time: number;
   total_logical_io_reads: number;
@@ -56,6 +59,9 @@ UnionAll AS
 (
 SELECT
     CONVERT(float, SUM(rs.count_executions)) as total_count_executions,
+    CONVERT(float, SUM(CASE WHEN rs.execution_type = 0 THEN rs.count_executions ELSE 0 END)) as total_regular_executions,
+    CONVERT(float, SUM(CASE WHEN rs.execution_type = 3 THEN rs.count_executions ELSE 0 END)) as total_aborted_executions,
+    CONVERT(float, SUM(CASE WHEN rs.execution_type = 4 THEN rs.count_executions ELSE 0 END)) as total_exception_executions,
     ROUND(CONVERT(float, SUM(rs.avg_duration*rs.count_executions))*0.001,2) as total_duration,
     ROUND(CONVERT(float, SUM(rs.avg_cpu_time*rs.count_executions))*0.001,2) as total_cpu_time,
     ROUND(CONVERT(float, SUM(rs.avg_logical_io_reads*rs.count_executions))*8,2) as total_logical_io_reads,
@@ -77,6 +83,9 @@ GROUP BY DATEDIFF(d, 0, SWITCHOFFSET(rs.last_execution_time, DATEPART(tz, @inter
 )
 SELECT
     total_count_executions,
+    total_regular_executions,
+    total_aborted_executions,
+    total_exception_executions,
     total_duration,
     total_cpu_time,
     total_logical_io_reads,

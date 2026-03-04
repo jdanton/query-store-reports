@@ -20,6 +20,9 @@ export interface RegressedQueriesRow {
   total_duration_hist: number;
   count_executions_recent: number;
   count_executions_hist: number;
+  regular_executions_recent: number;
+  aborted_executions_recent: number;
+  exception_executions_recent: number;
   num_plans: number;
 }
 
@@ -58,6 +61,9 @@ SELECT
     p.query_id query_id,
     ROUND(CONVERT(float, SUM(rs.avg_duration*rs.count_executions))*0.001,2) total_duration,
     SUM(rs.count_executions) count_executions,
+    SUM(CASE WHEN rs.execution_type = 0 THEN rs.count_executions ELSE 0 END) regular_executions,
+    SUM(CASE WHEN rs.execution_type = 3 THEN rs.count_executions ELSE 0 END) aborted_executions,
+    SUM(CASE WHEN rs.execution_type = 4 THEN rs.count_executions ELSE 0 END) exception_executions,
     COUNT(distinct p.plan_id) num_plans
 FROM sys.query_store_runtime_stats rs
     JOIN sys.query_store_plan p ON p.plan_id = rs.plan_id
@@ -76,6 +82,9 @@ SELECT TOP (@results_row_count)
     results.total_duration_hist total_duration_hist,
     ISNULL(results.count_executions_recent, 0) count_executions_recent,
     ISNULL(results.count_executions_hist, 0) count_executions_hist,
+    ISNULL(results.regular_executions_recent, 0) regular_executions_recent,
+    ISNULL(results.aborted_executions_recent, 0) aborted_executions_recent,
+    ISNULL(results.exception_executions_recent, 0) exception_executions_recent,
     queries.num_plans num_plans
 FROM
 (
@@ -87,7 +96,10 @@ SELECT
     ROUND(recent.total_duration, 2) total_duration_recent,
     ROUND(hist.total_duration, 2) total_duration_hist,
     recent.count_executions count_executions_recent,
-    hist.count_executions count_executions_hist
+    hist.count_executions count_executions_hist,
+    recent.regular_executions regular_executions_recent,
+    recent.aborted_executions aborted_executions_recent,
+    recent.exception_executions exception_executions_recent
 FROM hist
     JOIN recent ON hist.query_id = recent.query_id
     JOIN sys.query_store_query q ON q.query_id = hist.query_id

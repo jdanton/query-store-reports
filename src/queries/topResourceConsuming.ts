@@ -36,6 +36,9 @@ export interface TopResourceConsumingRow {
   metric_value: number;
   total_duration: number;
   count_executions: number;
+  regular_executions: number;
+  aborted_executions: number;
+  exception_executions: number;
   num_plans: number;
 }
 
@@ -75,6 +78,9 @@ SELECT TOP (@results_row_count)
     ${metricExpr} metric_value,
     ROUND(CONVERT(float, SUM(rs.avg_duration*rs.count_executions))*0.001,2) total_duration,
     SUM(rs.count_executions) count_executions,
+    SUM(CASE WHEN rs.execution_type = 0 THEN rs.count_executions ELSE 0 END) regular_executions,
+    SUM(CASE WHEN rs.execution_type = 3 THEN rs.count_executions ELSE 0 END) aborted_executions,
+    SUM(CASE WHEN rs.execution_type = 4 THEN rs.count_executions ELSE 0 END) exception_executions,
     COUNT(distinct p.plan_id) num_plans
 FROM sys.query_store_runtime_stats rs
     JOIN sys.query_store_plan p ON p.plan_id = rs.plan_id

@@ -16,6 +16,9 @@ export interface HighVariationRow {
   avg_duration: number;
   variation_duration: number;
   count_executions: number;
+  regular_executions: number;
+  aborted_executions: number;
+  exception_executions: number;
   num_plans: number;
 }
 
@@ -39,6 +42,9 @@ SELECT TOP (@results_row_count)
     ROUND(CONVERT(float, SUM(rs.avg_duration*rs.count_executions))/NULLIF(SUM(rs.count_executions), 0)*0.001,2) avg_duration,
     ISNULL(ROUND(CONVERT(float, (SQRT( SUM(rs.stdev_duration*rs.stdev_duration*rs.count_executions)/NULLIF(SUM(rs.count_executions), 0))*SUM(rs.count_executions)) / NULLIF(SUM(rs.avg_duration*rs.count_executions), 0)),2), 0) variation_duration,
     SUM(rs.count_executions) count_executions,
+    SUM(CASE WHEN rs.execution_type = 0 THEN rs.count_executions ELSE 0 END) regular_executions,
+    SUM(CASE WHEN rs.execution_type = 3 THEN rs.count_executions ELSE 0 END) aborted_executions,
+    SUM(CASE WHEN rs.execution_type = 4 THEN rs.count_executions ELSE 0 END) exception_executions,
     COUNT(distinct p.plan_id) num_plans
 FROM sys.query_store_runtime_stats rs
     JOIN sys.query_store_plan p ON p.plan_id = rs.plan_id

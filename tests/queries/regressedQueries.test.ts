@@ -42,6 +42,17 @@ describe('executeRegressedQueries', () => {
     expect(state.querySql).toContain('@min_exec_count');
   });
 
+  it('includes execution type breakdown in recent CTE', async () => {
+    const { pool, state } = createMockPool();
+    await executeRegressedQueries(pool, baseParams);
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 0 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 3 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain("CASE WHEN rs.execution_type = 4 THEN rs.count_executions ELSE 0 END");
+    expect(state.querySql).toContain('regular_executions_recent');
+    expect(state.querySql).toContain('aborted_executions_recent');
+    expect(state.querySql).toContain('exception_executions_recent');
+  });
+
   it('returns recordset from pool', async () => {
     const mockRows = [{ query_id: 42 }];
     const { pool } = createMockPool(mockRows);
