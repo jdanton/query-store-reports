@@ -4,6 +4,34 @@ All notable changes to **SQL Server Query Store Reports** are documented here.
 
 ---
 
+## [0.4.2] — 2026-03-13
+
+### Changed
+
+- **Parallel drilldown queries** — when a plan ID is already known, execution stats and the query plan are now fetched in parallel (`Promise.all`), reducing drilldown load time.
+- **Grid pagination** — grids with more than 100 rows now render only the first 100 initially, with a "Show all" button to load the rest on demand. Reduces DOM bloat for large result sets.
+- **Time range validation** — custom time range pickers now validate that the start time is before the end time, showing an error instead of sending an empty query.
+- **Replica query error logging** — `queryStoreReplicas.ts` now logs a `console.warn` when falling back to defaults, aiding debugging on unexpected failures.
+
+---
+
+## [0.4.1] — 2026-03-04
+
+### Added
+
+- **Execution type breakdown** — Top Resource Consuming, Regressed Queries, and High Variation reports now include per-execution-type columns (Regular, Aborted, Exception) showing execution counts broken down by outcome.
+- **Query Store status & replica queries** — new `queryStoreStatus.ts` and `queryStoreReplicas.ts` modules for checking Query Store enablement and detecting Always On / Hyperscale replicas.
+- **Expanded test suite** — 96 tests across 11 test files (up from 76 across 9):
+  - `tests/planRenderer.test.ts` — 46 tests (up from 42).
+  - `tests/queries/*.test.ts` — 50 tests covering all 10 query modules (up from 34 across 8).
+
+### Fixed
+
+- **CodeQL security fixes** — addressed code scanning alerts for improved static analysis compliance.
+- **XSS vulnerability** — replaced `innerHTML` usage with `textContent` to prevent cross-site scripting in webview content.
+
+---
+
 ## [0.4.0] — 2026-02-26
 
 ### Added
@@ -95,7 +123,7 @@ All notable changes to **SQL Server Query Store Reports** are documented here.
 
 ## Roadmap
 
-- Replica group selector for Always On / Hyperscale secondary replicas
+- ~~Replica group selector for Always On / Hyperscale secondary replicas~~ ✅ Shipped in 0.4.1
 - Export report data to CSV
 - Query text copy button
 - Pinned/bookmarked queries across sessions

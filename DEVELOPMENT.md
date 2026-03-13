@@ -59,7 +59,9 @@ query-store-reports/
 │   │   ├── forcedPlans.ts
 │   │   ├── overallConsumption.ts
 │   │   ├── executionStats.ts   Drill-down: per-query time-bucketed stats
-│   │   └── queryPlan.ts        Drill-down: fetch XML showplan
+│   │   ├── queryPlan.ts        Drill-down: fetch XML showplan
+│   │   ├── queryStoreStatus.ts Check if Query Store is enabled on the database
+│   │   └── queryStoreReplicas.ts  Detect Always On / Hyperscale replicas
 │   └── panels/
 │       └── QueryStorePanel.ts  Webview panel — HTML shell, message routing, query dispatch
 │
@@ -79,8 +81,8 @@ query-store-reports/
 │   ├── helpers/
 │   │   ├── mockSql.ts          createMockPool() — mock mssql.ConnectionPool factory
 │   │   └── samplePlans.ts      XML showplan fixtures for plan renderer tests
-│   ├── planRenderer.test.ts    Plan parsing, SVG rendering, helper functions (42 tests)
-│   └── queries/                One test file per query module (34 tests total)
+│   ├── planRenderer.test.ts    Plan parsing, SVG rendering, helper functions (46 tests)
+│   └── queries/                One test file per query module (50 tests total)
 │       ├── topResourceConsuming.test.ts
 │       ├── regressedQueries.test.ts
 │       ├── highVariation.test.ts
@@ -88,7 +90,9 @@ query-store-reports/
 │       ├── forcedPlans.test.ts
 │       ├── overallConsumption.test.ts
 │       ├── executionStats.test.ts
-│       └── queryPlan.test.ts
+│       ├── queryPlan.test.ts
+│       ├── queryStoreStatus.test.ts
+│       └── queryStoreReplicas.test.ts
 │
 ├── vitest.config.ts            Test configuration
 ├── tsconfig.test.json          Test TypeScript config (extends tsconfig.json)
@@ -123,6 +127,7 @@ Messages flow bidirectionally through `vscode.postMessage` / `onDidReceiveMessag
 |--------|---------|---------|
 | `refresh` | `{ params }` | User clicked Refresh or changed a parameter |
 | `drilldown` | `{ queryId, planId, params }` | User clicked a row in the grid |
+| `getPlan` | `{ queryId, planId }` | User clicked a plan label in the drilldown chart legend |
 | `forcePlan` | `{ queryId, planId }` | User clicked "Force This Plan" |
 | `removeForcedPlan` | `{ queryId }` | User clicked "Remove Forced Plan" |
 
@@ -260,9 +265,9 @@ npm run test:watch  # watch mode
 
 ### Test structure
 
-- **`tests/planRenderer.test.ts`** (42 tests) — tests XML showplan parsing (`parsePlan`), SVG rendering (`renderPlanSvg`), and exported helper functions (`costColor`, `edgeWeight`, `formatRows`, `formatCost`). Uses the `// @vitest-environment happy-dom` directive for DOMParser support.
+- **`tests/planRenderer.test.ts`** (46 tests) — tests XML showplan parsing (`parsePlan`), SVG rendering (`renderPlanSvg`), and exported helper functions (`costColor`, `edgeWeight`, `formatRows`, `formatCost`). Uses the `// @vitest-environment happy-dom` directive for DOMParser support.
 
-- **`tests/queries/*.test.ts`** (34 tests) — one file per query module. Each test uses `createMockPool()` to verify parameter binding (names, types, values), SQL structure (key clauses), and recordset passthrough.
+- **`tests/queries/*.test.ts`** (50 tests) — one file per query module. Each test uses `createMockPool()` to verify parameter binding (names, types, values), SQL structure (key clauses), recordset passthrough, and execution type breakdown columns.
 
 ### Mock helpers
 

@@ -32,7 +32,10 @@ ORDER BY replica_group_id`;
 
     const result = await request.query<QueryStoreReplicaRow>(querySql);
     return result.recordset.length > 0 ? result.recordset : DEFAULT_REPLICAS;
-  } catch {
+  } catch (err) {
+    // Expected on SQL Server < 2022 where sys.query_store_replicas doesn't exist.
+    // Log for debugging in case the failure is unexpected.
+    console.warn('[QueryStoreReplicas] Falling back to default replicas:', err instanceof Error ? err.message : err);
     return DEFAULT_REPLICAS;
   }
 }

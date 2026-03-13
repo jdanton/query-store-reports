@@ -12,9 +12,9 @@ A cross-platform VS Code extension that brings SQL Server Management Studio's **
 
 | Report | Description |
 |--------|-------------|
-| **Top Resource Consuming Queries** | Ranks queries by a selected metric (duration, CPU, IO, memory, row count). Horizontal bar chart + sortable grid. |
-| **Regressed Queries** | Finds queries whose average duration has grown compared to a historical baseline. Grouped bar chart comparing recent vs. historical cost. |
-| **Queries with High Variation** | Surfaces queries with unpredictable execution times (high coefficient of variation). Identifies plan instability. |
+| **Top Resource Consuming Queries** | Ranks queries by a selected metric (duration, CPU, IO, memory, row count). Includes execution type breakdown (Regular, Aborted, Exception). Horizontal bar chart + sortable grid. |
+| **Regressed Queries** | Finds queries whose average duration has grown compared to a historical baseline. Includes execution type breakdown. Grouped bar chart comparing recent vs. historical cost. |
+| **Queries with High Variation** | Surfaces queries with unpredictable execution times (high coefficient of variation). Includes execution type breakdown. Identifies plan instability. |
 | **Overall Wait Statistics** | Shows aggregate wait time by category (CPU, I/O, Lock, Memory, etc.) for the selected time window. |
 | **Forced Plans** | Lists all queries with a forced execution plan, including failure counts and reasons. Provides a one-click **Remove Forced Plan** action. |
 | **Overall Resource Consumption** | Day-by-day trend of total executions, duration, CPU, I/O, memory, and wait time. Multi-series line chart with per-metric toggles. |

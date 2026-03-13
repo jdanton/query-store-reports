@@ -361,7 +361,23 @@ function buildToolbar(): void {
 
 // ---- Data requests ----
 
+function validateTimeRange(params: Record<string, unknown>): string | null {
+  const startKey = params.intervalStartTime ? 'intervalStartTime' : 'recentStartTime';
+  const endKey   = params.intervalEndTime   ? 'intervalEndTime'   : 'recentEndTime';
+  const start = params[startKey] as string | undefined;
+  const end   = params[endKey]   as string | undefined;
+  if (start && end && new Date(start).getTime() >= new Date(end).getTime()) {
+    return 'Start time must be before end time.';
+  }
+  return null;
+}
+
 function requestData(): void {
+  const err = validateTimeRange(currentParams);
+  if (err) {
+    setStatus('error', err);
+    return;
+  }
   setStatus('loading');
   vscode.postMessage({ type: 'refresh', params: currentParams });
 }
@@ -661,6 +677,8 @@ function fmtDate(v: unknown): string {
   return d.toLocaleString();
 }
 
+const GRID_PAGE_SIZE = 100;
+
 function renderGrid(rows: Record<string, unknown>[]): void {
   const cols = COLUMN_DEFS[reportType] ?? [];
   if (cols.length === 0 || rows.length === 0) {
@@ -687,8 +705,9 @@ function renderGrid(rows: Record<string, unknown>[]): void {
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
+  const initialLimit = Math.min(rows.length, GRID_PAGE_SIZE);
+
+  function appendRow(row: Record<string, unknown>): void {
     const tr = document.createElement('tr');
     tr.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).tagName === 'BUTTON') return;
@@ -723,10 +742,29 @@ function renderGrid(rows: Record<string, unknown>[]): void {
 
     tbody.appendChild(tr);
   }
+
+  for (let i = 0; i < initialLimit; i++) {
+    appendRow(rows[i]);
+  }
   table.appendChild(tbody);
 
   gridContainer.innerHTML = '';
   gridContainer.appendChild(table);
+
+  // Show "Show all" button when rows exceed page size
+  if (rows.length > GRID_PAGE_SIZE) {
+    const showAllBtn = document.createElement('button');
+    showAllBtn.className = 'qs-btn qs-btn-sm';
+    showAllBtn.textContent = `Show all ${rows.length} rows (${rows.length - GRID_PAGE_SIZE} more)`;
+    showAllBtn.style.margin = '8px 0';
+    showAllBtn.addEventListener('click', () => {
+      for (let i = GRID_PAGE_SIZE; i < rows.length; i++) {
+        appendRow(rows[i]);
+      }
+      showAllBtn.remove();
+    });
+    gridContainer.appendChild(showAllBtn);
+  }
 }
 
 // ---- Drilldown ----

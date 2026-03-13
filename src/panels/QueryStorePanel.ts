@@ -240,33 +240,40 @@ export class QueryStorePanel {
     try {
       const pool = await this.runner.getPool();
 
-      // Execution stats
       const statsParams: ExecutionStatsParams = {
         queryId,
         replicaGroupId:    Number(mainParams?.replicaGroupId ?? 1),
         intervalStartTime: (() => { const v = mainParams?.intervalStartTime ?? mainParams?.recentStartTime; return v ? new Date(v as string) : hoursAgo(1); })(),
         intervalEndTime:   (() => { const v = mainParams?.intervalEndTime   ?? mainParams?.recentEndTime;   return v ? new Date(v as string) : new Date(); })(),
       };
-      const statsRows = await executeExecutionStats(pool, statsParams);
-      this._post({ type: 'drilldownData', rows: statsRows });
 
-      // Determine the best plan_id: use the one from the report row if valid,
-      // otherwise pick the most recent plan from the execution stats results.
-      let effectivePlanId = planId;
-      if ((!effectivePlanId || effectivePlanId <= 0) && statsRows.length > 0) {
-        const latestRow = statsRows.reduce((a, b) => {
-          const ta = new Date(a.bucket_start).getTime();
-          const tb = new Date(b.bucket_start).getTime();
-          return tb > ta ? b : a;
-        });
-        effectivePlanId = latestRow.plan_id as number;
-      }
-
-      // Query plan
-      if (effectivePlanId) {
-        await this._loadPlan(queryId, effectivePlanId);
+      // When planId is already known, fetch stats and plan in parallel
+      if (planId && planId > 0) {
+        const [statsRows] = await Promise.all([
+          executeExecutionStats(pool, statsParams),
+          this._loadPlan(queryId, planId),
+        ]);
+        this._post({ type: 'drilldownData', rows: statsRows });
       } else {
-        this._post({ type: 'planData', xml: '', isForcedPlan: false, planId: 0 });
+        // Plan unknown — fetch stats first, then derive the best plan
+        const statsRows = await executeExecutionStats(pool, statsParams);
+        this._post({ type: 'drilldownData', rows: statsRows });
+
+        let effectivePlanId = 0;
+        if (statsRows.length > 0) {
+          const latestRow = statsRows.reduce((a, b) => {
+            const ta = new Date(a.bucket_start).getTime();
+            const tb = new Date(b.bucket_start).getTime();
+            return tb > ta ? b : a;
+          });
+          effectivePlanId = latestRow.plan_id as number;
+        }
+
+        if (effectivePlanId) {
+          await this._loadPlan(queryId, effectivePlanId);
+        } else {
+          this._post({ type: 'planData', xml: '', isForcedPlan: false, planId: 0 });
+        }
       }
     } catch (err) {
       if (!isRetry && isTokenError(err)) {
