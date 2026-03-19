@@ -60,6 +60,60 @@
         "label": "Query Store"
       }
     ],
+    "configuration": {
+      "title": "Query Store Reports",
+      "properties": {
+        "queryStoreReports.defaultMetric": {
+          "type": "string",
+          "default": "duration",
+          "enum": [
+            "duration",
+            "cpu",
+            "logicalReads",
+            "logicalWrites",
+            "physicalReads",
+            "memory",
+            "rowcount"
+          ],
+          "enumDescriptions": [
+            "Duration (ms)",
+            "CPU Time (ms)",
+            "Logical IO Reads",
+            "Logical IO Writes",
+            "Physical IO Reads",
+            "Memory (KB)",
+            "Row Count"
+          ],
+          "description": "Default metric for the Top Resource Consuming Queries report."
+        },
+        "queryStoreReports.defaultTimeWindow": {
+          "type": "string",
+          "default": "1h",
+          "enum": [
+            "1h",
+            "4h",
+            "24h",
+            "7d",
+            "30d"
+          ],
+          "enumDescriptions": [
+            "Last 1 hour",
+            "Last 4 hours",
+            "Last 24 hours",
+            "Last 7 days",
+            "Last 30 days"
+          ],
+          "description": "Default time window for reports (Top Resources, Regressed recent period, High Variation, Wait Stats)."
+        },
+        "queryStoreReports.defaultRowCount": {
+          "type": "number",
+          "default": 25,
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Default number of rows to return in query reports."
+        }
+      }
+    },
     "menus": {
       "commandPalette": [
         {

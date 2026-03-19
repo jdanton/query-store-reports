@@ -349,6 +349,11 @@ export class QueryStorePanel {
     const defaultMinus7d = daysAgo(7).toISOString();
     const defaultMinus30d = daysAgo(30).toISOString();
 
+    const config = vscode.workspace.getConfiguration('queryStoreReports');
+    const defaultMetric     = config.get<string>('defaultMetric', 'duration');
+    const defaultTimeWindow = config.get<string>('defaultTimeWindow', '1h');
+    const defaultRowCount   = config.get<number>('defaultRowCount', 25);
+
     const reportTitle = REPORT_TITLES[this.reportType];
 
     return `<!DOCTYPE html>
@@ -372,6 +377,9 @@ export class QueryStorePanel {
     data-default-minus7d="${defaultMinus7d}"
     data-default-minus30d="${defaultMinus30d}"
     data-replicas="${escapeHtml(JSON.stringify(this.replicas))}"
+    data-default-metric="${escapeHtml(defaultMetric)}"
+    data-default-time-window="${escapeHtml(defaultTimeWindow)}"
+    data-default-row-count="${defaultRowCount}"
   >
     <header class="qs-header">
       <div class="qs-header-title">
