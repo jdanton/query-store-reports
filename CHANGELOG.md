@@ -4,6 +4,18 @@ All notable changes to **SQL Server Query Store Reports** are documented here.
 
 ---
 
+## [0.4.3] — 2026-03-19
+
+### Added
+
+- **Configurable default settings** — three new VS Code settings under **Settings > Extensions > Query Store Reports**, persisted across sessions:
+  - `queryStoreReports.defaultMetric` — default metric for the Top Resource Consuming Queries report (duration, cpu, logicalReads, logicalWrites, physicalReads, memory, rowcount). Default: `duration`.
+  - `queryStoreReports.defaultTimeWindow` — default time window preset for reports (1h, 4h, 24h, 7d, 30d). Default: `1h`.
+  - `queryStoreReports.defaultRowCount` — default number of rows returned in query reports (1–200). Default: `25`.
+- **`.DS_Store` added to `.gitignore`** — macOS Finder metadata files are no longer tracked.
+
+---
+
 ## [0.4.2] — 2026-03-13
 
 ### Changed
@@ -124,6 +136,7 @@ All notable changes to **SQL Server Query Store Reports** are documented here.
 ## Roadmap
 
 - ~~Replica group selector for Always On / Hyperscale secondary replicas~~ ✅ Shipped in 0.4.1
+- ~~Configurable default settings (metric, time window, row count)~~ ✅ Shipped in 0.4.3
 - Export report data to CSV
 - Query text copy button
 - Pinned/bookmarked queries across sessions
