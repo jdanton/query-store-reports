@@ -1,5 +1,9 @@
 # SQL Server Query Store Reports
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/DennyCherryandAssociatesCOnsulting.query-store-reports?label=VS%20Code%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=DennyCherryandAssociatesCOnsulting.query-store-reports)
+
+> 🎉 **Now available on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DennyCherryandAssociatesCOnsulting.query-store-reports)!** Install directly from VS Code without any build steps.
+
 A cross-platform VS Code extension that brings SQL Server Management Studio's **Query Store** report suite directly into VS Code. Works on macOS, Linux, and Windows.
 
 ![Query Store context menu](media/QueryStore.png) 
@@ -40,7 +44,18 @@ Every query-level report supports **drill-down**: click any row to open a split 
 
 ## Installation
 
-### From VSIX (recommended)
+### From the VS Code Marketplace (recommended)
+
+The easiest way to install is directly from the VS Code Marketplace:
+
+- **Extensions view**: Open the Extensions view (`Ctrl+Shift+X` / `Cmd+Shift+X`), search for **"SQL Server Query Store Reports"**, and click **Install**.
+- **Marketplace listing**: Visit the [Marketplace listing page](https://marketplace.visualstudio.com/items?itemName=DennyCherryandAssociatesCOnsulting.query-store-reports) and click **Install**.
+- **Command line**:
+  ```bash
+  code --install-extension DennyCherryandAssociatesCOnsulting.query-store-reports
+  ```
+
+### From VSIX
 
 1. Build the `.vsix` package:
    ```bash
